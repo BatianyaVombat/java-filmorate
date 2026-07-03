@@ -64,15 +64,8 @@ class FilmorateApplicationTests {
     @Test
     @DisplayName("Создание пользователя с валидными данными")
     void shouldCreateUserIfFieldsValid() throws Exception {
-        String jsonBody = """
-                {
-                "id": 1,
-                "login": "BatyaniaVombat",
-                "name": "Name",
-                "email" : "alex.strange@yandex.ru",
-                "birthday": "1993-06-20"
-                }
-                """;
+        String jsonBody = "{\"id\":1,\"login\":\"BatyaniaVombat\",\"name\":\"Name\"," +
+                "\"email\":\"alex.strange@yandex.ru\",\"birthday\":\"1993-06-20\"}";
 
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create("http://localhost:8080/users"))
@@ -93,15 +86,8 @@ class FilmorateApplicationTests {
     @Test
     @DisplayName("Создание пользователя с невалидными данными")
     void shouldReturnListOfErrorsIfUserFieldsNotValid() throws Exception {
-        String jsonBody = """
-                {
-                "id": 1,
-                "login": "   ",
-                "name": "Name",
-                "email" : "этоне!почта",
-                "birthday": "2093-06-20"
-                }
-                """;
+        String jsonBody = "{\"id\":1,\"login\":\"   \",\"name\":\"Name\"," +
+                "\"email\":\"этоне!почта\",\"birthday\":\"2093-06-20\"}";
 
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create("http://localhost:8080/users"))
@@ -123,15 +109,8 @@ class FilmorateApplicationTests {
     @Test
     @DisplayName("Успешное обновление данных о пользователе")
     void shouldUpdateUserCorrectly() throws Exception {
-        String jsonCreate = """
-                {
-                "id": 1,
-                "login": "OldLogin",
-                "name": "OldName",
-                "email" : "old@example.com",
-                "birthday": "1990-01-01"
-                }
-                """;
+        String jsonCreate = "{\"id\":1,\"login\":\"OldLogin\",\"name\":\"OldName\"," +
+                "\"email\":\"old@example.com\",\"birthday\":\"1990-01-01\"}";
 
         HttpRequest createRequest = HttpRequest.newBuilder()
                 .uri(URI.create("http://localhost:8080/users"))
@@ -145,16 +124,8 @@ class FilmorateApplicationTests {
         Long userId = getId(createResponse.body());
 
         //обновляем данные пользователя
-        String jsonUpdate = String.format("""
-                        {
-                        "id": %d,
-                        "login": "newLogin",
-                        "name": "New Name",
-                        "email": "new@example.com",
-                        "birthday": "1995-05-05"
-                        }
-                        """
-                , userId);
+        String jsonUpdate = String.format("{\"id\":%d,\"login\":\"newLogin\",\"name\":\"New Name\"," +
+                "\"email\":\"new@example.com\",\"birthday\":\"1995-05-05\"}", userId);
 
         HttpRequest updateRequest = HttpRequest.newBuilder()
                 .uri(URI.create("http://localhost:8080/users"))
@@ -178,15 +149,8 @@ class FilmorateApplicationTests {
     @Test
     @DisplayName("Вернёт 500 если при обновлении данных о пользователе нужный id не найден")
     void shouldReturn500IfUserIdIsNotFound() throws Exception {
-        String jsonCreate = """
-                {
-                "id": 1,
-                "login": "OldLogin",
-                "name": "OldName",
-                "email" : "old@example.com",
-                "birthday": "1990-01-01"
-                }
-                """;
+        String jsonCreate = "{\"id\":1,\"login\":\"OldLogin\",\"name\":\"OldName\"," +
+                "\"email\":\"old@example.com\",\"birthday\":\"1990-01-01\"}";
 
         HttpRequest createRequest = HttpRequest.newBuilder()
                 .uri(URI.create("http://localhost:8080/users"))
@@ -199,15 +163,8 @@ class FilmorateApplicationTests {
         Assertions.assertEquals(200, createResponse.statusCode());
 
         //обновляем данные несуществующего пользователя
-        String jsonUpdate = """
-                {
-                "id": 4,
-                "login": "newLogin",
-                "name": "New Name",
-                "email": "new@example.com",
-                "birthday": "1995-05-05"
-                }
-                """;
+        String jsonUpdate = "{\"id\":4,\"login\":\"newLogin\",\"name\":\"New Name\"," +
+                "\"email\":\"new@example.com\",\"birthday\":\"1995-05-05\"}";
 
         HttpRequest updateRequest = HttpRequest.newBuilder()
                 .uri(URI.create("http://localhost:8080/users"))
@@ -224,15 +181,8 @@ class FilmorateApplicationTests {
     @Test
     @DisplayName("Вернёт 500 если при обновлении данных о пользователе ввели некорректные значения")
     void shouldReturn500IfUserUpdateInfoIsInvalid() throws Exception {
-        String jsonCreate = """
-                {
-                "id": 1,
-                "login": "OldLogin",
-                "name": "OldName",
-                "email" : "old@example.com",
-                "birthday": "1990-01-01"
-                }
-                """;
+        String jsonCreate = "{\"id\":1,\"login\":\"OldLogin\",\"name\":\"OldName\"," +
+                "\"email\":\"old@example.com\",\"birthday\":\"1990-01-01\"}";
 
         HttpRequest createRequest = HttpRequest.newBuilder()
                 .uri(URI.create("http://localhost:8080/users"))
@@ -246,17 +196,8 @@ class FilmorateApplicationTests {
         Long userId = getId(createResponse.body());
 
         //неудачно обновляем данные пользователя
-        String jsonUpdate = String.format(
-                """
-                        {
-                            "id": %d,
-                            "login": "new Login",
-                            "name": "New Name",
-                            "email": "забыл_почту!@",
-                            "birthday": "2095-05-05"
-                        }
-                        """
-                , userId);
+        String jsonUpdate = String.format("{\"id\":%d,\"login\":\"new Login\",\"name\":\"New Name\"," +
+                "\"email\":\"забыл_почту!@\",\"birthday\":\"2095-05-05\"}", userId);
 
         HttpRequest updateRequest = HttpRequest.newBuilder()
                 .uri(URI.create("http://localhost:8080/users"))
@@ -266,7 +207,6 @@ class FilmorateApplicationTests {
 
         HttpResponse<String> updateResponse = client.send(updateRequest, HttpResponse.BodyHandlers.ofString());
         Assertions.assertEquals(400, updateResponse.statusCode());
-
     }
 
     //---------------Проверка Films контроллера--------------
@@ -306,15 +246,8 @@ class FilmorateApplicationTests {
     @Test
     @DisplayName("Создание фильма с валидными данными")
     void shouldCreateFilmIfFieldsValid() throws Exception {
-        String jsonBody = """
-                {
-                    "id": 1,
-                    "name": "Человек-Паук",
-                    "description" : "Прыгает по крышам, стреляет паутиной",
-                    "releaseDate": "2002-05-15",
-                    "duration": 120
-                }
-                """;
+        String jsonBody = "{\"id\":1,\"name\":\"Человек-Паук\",\"description\":\"Прыгает по крышам," +
+                " стреляет паутиной\",\"releaseDate\":\"2002-05-15\",\"duration\":120}";
 
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create("http://localhost:8080/films"))
@@ -335,17 +268,9 @@ class FilmorateApplicationTests {
     @Test
     @DisplayName("Создание фильма с невалидными данными")
     void shouldReturnListOfErrorsIfFilmFieldsNotValid() throws Exception {
-        String invalidName = "a".repeat(201);
-        String jsonBody = String.format("""
-                {
-                "id": 1,
-                "name": "",
-                "description" : "%s",
-                "releaseDate": "1894-05-15",
-                "duration": -10
-                }
-                """, invalidName);
-
+        String invalidDescription = "a".repeat(201);
+        String jsonBody = String.format("{\"id\":1,\"name\":\"\",\"description\":\"%s\"," +
+                "\"releaseDate\":\"1894-05-15\",\"duration\":-10}", invalidDescription);
 
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create("http://localhost:8080/films"))
@@ -367,15 +292,8 @@ class FilmorateApplicationTests {
     @Test
     @DisplayName("Должен успешно обновить данные о фильме")
     void shouldUpdateFilmCorrectly() throws IOException, InterruptedException {
-        String oldJsonBody = """
-                {
-                "id": 1,
-                "name": "Человек-Паук",
-                "description" : "Прыгает по крышам, стреляет паутиной",
-                "releaseDate": "2004-05-15",
-                "duration": 120
-                }
-                """;
+        String oldJsonBody = "{\"id\":1,\"name\":\"Человек-Паук\",\"description\":\"Прыгает по крышам," +
+                " стреляет паутиной\",\"releaseDate\":\"2004-05-15\",\"duration\":120}";
 
         HttpRequest oldRequest = HttpRequest.newBuilder()
                 .uri(URI.create("http://localhost:8080/films"))
@@ -387,16 +305,9 @@ class FilmorateApplicationTests {
 
         Long filmId = getId(oldResponse.body());
 
-        String newJsonBody = String.format("""
-                        {
-                        "id": %d,
-                        "name": "Человек-Паук 2",
-                        "description" : "А может не прыгает и не стреляет!",
-                        "releaseDate": "2002-05-15",
-                        "duration": 130
-                        }
-                        """
-                , filmId);
+        String newJsonBody = String.format("{\"id\":%d,\"name\":\"Человек-Паук 2\"," +
+                "\"description\":\"А может не прыгает и не стреляет!\",\"releaseDate\":\"2002-05-15\"," +
+                "\"duration\":130}", filmId);
 
         HttpRequest updateRequest = HttpRequest.newBuilder()
                 .uri(URI.create("http://localhost:8080/films"))
@@ -417,15 +328,8 @@ class FilmorateApplicationTests {
     @Test
     @DisplayName("Вернёт 500 если при обновлении данных о фильме нужный id не найден")
     void shouldReturn500IfFilmIdIsNotFound() throws IOException, InterruptedException {
-        String oldJsonBody = """
-                {
-                "id": 1,
-                "name": "Человек-Паук",
-                "description" : "Прыгает по крышам, стреляет паутиной",
-                "releaseDate": "2004-05-15",
-                "duration": 120
-                }
-                """;
+        String oldJsonBody = "{\"id\":1,\"name\":\"Человек-Паук\",\"description\":\"Прыгает по крышам," +
+                " стреляет паутиной\",\"releaseDate\":\"2004-05-15\",\"duration\":120}";
 
         HttpRequest oldRequest = HttpRequest.newBuilder()
                 .uri(URI.create("http://localhost:8080/films"))
@@ -437,15 +341,8 @@ class FilmorateApplicationTests {
 
         Assertions.assertEquals(200, oldResponse.statusCode());
 
-        String newJsonBody = """
-                {
-                "id": 999,
-                "name": "Чел-Пук",
-                "description" : "А может не прыгает и не стреляет!",
-                "releaseDate": "2002-05-15",
-                "duration": 130
-                }
-                """;
+        String newJsonBody = "{\"id\":999,\"name\":\"Чел-Пук\",\"description\":\"А может не прыгает и не стреляет!\"," +
+                "\"releaseDate\":\"2002-05-15\",\"duration\":130}";
 
         HttpRequest updateRequest = HttpRequest.newBuilder()
                 .uri(URI.create("http://localhost:8080/films"))
@@ -461,15 +358,8 @@ class FilmorateApplicationTests {
     @Test
     @DisplayName("Вернёт 400 если при обновлении данных о фильме ввели некорректные значения")
     void shouldReturn400IfFilmUpdateInfoIsInvalid() throws IOException, InterruptedException {
-        String oldJsonBody = """
-                {
-                "id": 1,
-                "name": "Человек-Паук",
-                "description" : "Прыгает по крышам, стреляет паутиной",
-                "releaseDate": "2004-05-15",
-                "duration": 120
-                }
-                """;
+        String oldJsonBody = "{\"id\":1,\"name\":\"Человек-Паук\",\"description\":\"Прыгает по крышам," +
+                " стреляет паутиной\",\"releaseDate\":\"2004-05-15\",\"duration\":120}";
 
         HttpRequest oldRequest = HttpRequest.newBuilder()
                 .uri(URI.create("http://localhost:8080/films"))
@@ -482,16 +372,8 @@ class FilmorateApplicationTests {
         Long filmId = getId(oldResponse.body());
 
         String wrongDescription = "s".repeat(201);
-        String newJsonBody = String.format("""
-                        {
-                        "id": %d,
-                        "name": "",
-                        "description" : "%s",
-                        "releaseDate": "1894-05-15",
-                        "duration": -8
-                        }
-                        """
-                , filmId, wrongDescription);
+        String newJsonBody = String.format("{\"id\":%d,\"name\":\"\",\"description\":\"%s\"," +
+                "\"releaseDate\":\"1894-05-15\",\"duration\":-8}", filmId, wrongDescription);
 
         HttpRequest updateRequest = HttpRequest.newBuilder()
                 .uri(URI.create("http://localhost:8080/films"))
