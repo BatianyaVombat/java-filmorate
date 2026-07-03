@@ -66,11 +66,11 @@ class FilmorateApplicationTests {
     void shouldCreateUserIfFieldsValid() throws Exception {
         String jsonBody = """
                 {
-                    "id": 1,
-                    "login": "BatyaniaVombat",
-                    "name": "Name",
-                    "email" : "alex.strange@yandex.ru",
-                    "birthday": "1993-06-20"
+                "id": 1,
+                "login": "BatyaniaVombat",
+                "name": "Name",
+                "email" : "alex.strange@yandex.ru",
+                "birthday": "1993-06-20"
                 }
                 """;
 
@@ -93,16 +93,15 @@ class FilmorateApplicationTests {
     @Test
     @DisplayName("Создание пользователя с невалидными данными")
     void shouldReturnListOfErrorsIfUserFieldsNotValid() throws Exception {
-        String jsonBody =
-                """
-                        {
-                            "id": 1,
-                            "login": "   ",
-                            "name": "Name",
-                            "email" : "этоне!почта",
-                            "birthday": "2093-06-20"
-                        }
-                        """;
+        String jsonBody = """
+                {
+                "id": 1,
+                "login": "   ",
+                "name": "Name",
+                "email" : "этоне!почта",
+                "birthday": "2093-06-20"
+                }
+                """;
 
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create("http://localhost:8080/users"))
@@ -126,11 +125,11 @@ class FilmorateApplicationTests {
     void shouldUpdateUserCorrectly() throws Exception {
         String jsonCreate = """
                 {
-                    "id": 1,
-                    "login": "OldLogin",
-                    "name": "OldName",
-                    "email" : "old@example.com",
-                    "birthday": "1990-01-01"
+                "id": 1,
+                "login": "OldLogin",
+                "name": "OldName",
+                "email" : "old@example.com",
+                "birthday": "1990-01-01"
                 }
                 """;
 
@@ -146,14 +145,13 @@ class FilmorateApplicationTests {
         Long userId = getId(createResponse.body());
 
         //обновляем данные пользователя
-        String jsonUpdate = String.format(
-                """
+        String jsonUpdate = String.format("""
                         {
-                            "id": %d,
-                            "login": "newLogin",
-                            "name": "New Name",
-                            "email": "new@example.com",
-                            "birthday": "1995-05-05"
+                        "id": %d,
+                        "login": "newLogin",
+                        "name": "New Name",
+                        "email": "new@example.com",
+                        "birthday": "1995-05-05"
                         }
                         """
                 , userId);
@@ -182,11 +180,11 @@ class FilmorateApplicationTests {
     void shouldReturn500IfUserIdIsNotFound() throws Exception {
         String jsonCreate = """
                 {
-                    "id": 1,
-                    "login": "OldLogin",
-                    "name": "OldName",
-                    "email" : "old@example.com",
-                    "birthday": "1990-01-01"
+                "id": 1,
+                "login": "OldLogin",
+                "name": "OldName",
+                "email" : "old@example.com",
+                "birthday": "1990-01-01"
                 }
                 """;
 
@@ -203,11 +201,11 @@ class FilmorateApplicationTests {
         //обновляем данные несуществующего пользователя
         String jsonUpdate = """
                 {
-                    "id": 4,
-                    "login": "newLogin",
-                    "name": "New Name",
-                    "email": "new@example.com",
-                    "birthday": "1995-05-05"
+                "id": 4,
+                "login": "newLogin",
+                "name": "New Name",
+                "email": "new@example.com",
+                "birthday": "1995-05-05"
                 }
                 """;
 
@@ -228,11 +226,11 @@ class FilmorateApplicationTests {
     void shouldReturn500IfUserUpdateInfoIsInvalid() throws Exception {
         String jsonCreate = """
                 {
-                    "id": 1,
-                    "login": "OldLogin",
-                    "name": "OldName",
-                    "email" : "old@example.com",
-                    "birthday": "1990-01-01"
+                "id": 1,
+                "login": "OldLogin",
+                "name": "OldName",
+                "email" : "old@example.com",
+                "birthday": "1990-01-01"
                 }
                 """;
 
@@ -338,16 +336,15 @@ class FilmorateApplicationTests {
     @DisplayName("Создание фильма с невалидными данными")
     void shouldReturnListOfErrorsIfFilmFieldsNotValid() throws Exception {
         String invalidName = "a".repeat(201);
-        String jsonBody = String.format(
-                """
-                        {
-                            "id": 1,
-                            "name": "",
-                            "description" : "%s",
-                            "releaseDate": "1894-05-15",
-                            "duration": -10
-                        }
-                        """, invalidName);
+        String jsonBody = String.format("""
+                {
+                "id": 1,
+                "name": "",
+                "description" : "%s",
+                "releaseDate": "1894-05-15",
+                "duration": -10
+                }
+                """, invalidName);
 
 
         HttpRequest request = HttpRequest.newBuilder()
@@ -372,11 +369,11 @@ class FilmorateApplicationTests {
     void shouldUpdateFilmCorrectly() throws IOException, InterruptedException {
         String oldJsonBody = """
                 {
-                    "id": 1,
-                    "name": "Человек-Паук",
-                    "description" : "Прыгает по крышам, стреляет паутиной",
-                    "releaseDate": "2004-05-15",
-                    "duration": 120
+                "id": 1,
+                "name": "Человек-Паук",
+                "description" : "Прыгает по крышам, стреляет паутиной",
+                "releaseDate": "2004-05-15",
+                "duration": 120
                 }
                 """;
 
@@ -390,14 +387,13 @@ class FilmorateApplicationTests {
 
         Long filmId = getId(oldResponse.body());
 
-        String newJsonBody = String.format(
-                """
+        String newJsonBody = String.format("""
                         {
-                            "id": %d,
-                            "name": "Человек-Паук 2",
-                            "description" : "А может не прыгает и не стреляет!",
-                            "releaseDate": "2002-05-15",
-                            "duration": 130
+                        "id": %d,
+                        "name": "Человек-Паук 2",
+                        "description" : "А может не прыгает и не стреляет!",
+                        "releaseDate": "2002-05-15",
+                        "duration": 130
                         }
                         """
                 , filmId);
@@ -423,11 +419,11 @@ class FilmorateApplicationTests {
     void shouldReturn500IfFilmIdIsNotFound() throws IOException, InterruptedException {
         String oldJsonBody = """
                 {
-                    "id": 1,
-                    "name": "Человек-Паук",
-                    "description" : "Прыгает по крышам, стреляет паутиной",
-                    "releaseDate": "2004-05-15",
-                    "duration": 120
+                "id": 1,
+                "name": "Человек-Паук",
+                "description" : "Прыгает по крышам, стреляет паутиной",
+                "releaseDate": "2004-05-15",
+                "duration": 120
                 }
                 """;
 
@@ -443,11 +439,11 @@ class FilmorateApplicationTests {
 
         String newJsonBody = """
                 {
-                    "id": 999,
-                    "name": "Чел-Пук",
-                    "description" : "А может не прыгает и не стреляет!",
-                    "releaseDate": "2002-05-15",
-                    "duration": 130
+                "id": 999,
+                "name": "Чел-Пук",
+                "description" : "А может не прыгает и не стреляет!",
+                "releaseDate": "2002-05-15",
+                "duration": 130
                 }
                 """;
 
@@ -467,11 +463,11 @@ class FilmorateApplicationTests {
     void shouldReturn400IfFilmUpdateInfoIsInvalid() throws IOException, InterruptedException {
         String oldJsonBody = """
                 {
-                    "id": 1,
-                    "name": "Человек-Паук",
-                    "description" : "Прыгает по крышам, стреляет паутиной",
-                    "releaseDate": "2004-05-15",
-                    "duration": 120
+                "id": 1,
+                "name": "Человек-Паук",
+                "description" : "Прыгает по крышам, стреляет паутиной",
+                "releaseDate": "2004-05-15",
+                "duration": 120
                 }
                 """;
 
@@ -486,14 +482,13 @@ class FilmorateApplicationTests {
         Long filmId = getId(oldResponse.body());
 
         String wrongDescription = "s".repeat(201);
-        String newJsonBody = String.format(
-                """
+        String newJsonBody = String.format("""
                         {
-                            "id": %d,
-                            "name": "",
-                            "description" : "%s",
-                            "releaseDate": "1894-05-15",
-                            "duration": -8
+                        "id": %d,
+                        "name": "",
+                        "description" : "%s",
+                        "releaseDate": "1894-05-15",
+                        "duration": -8
                         }
                         """
                 , filmId, wrongDescription);
