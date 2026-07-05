@@ -10,14 +10,13 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 @Constraint(validatedBy = AfterValidator.class)
-@Target(ElementType.FIELD)//только поля
-@Retention(RetentionPolicy.RUNTIME)//доступна во время работы приложения
+@Target(ElementType.FIELD)
+@Retention(RetentionPolicy.RUNTIME)
 public @interface After {
     String message() default "Дата должна быть позже указанной";
 
     String value();
 
-    //Поля обязательное по стандарту для кастомных аннотаций
     Class<?>[] groups() default {};
 
     Class<? extends Payload>[] payload() default {};
