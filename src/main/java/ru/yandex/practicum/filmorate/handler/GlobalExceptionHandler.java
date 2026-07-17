@@ -6,6 +6,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import ru.yandex.practicum.filmorate.exeptions.NotFoundException;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -26,7 +27,6 @@ public class GlobalExceptionHandler {
                 details.add(fieldError.getDefaultMessage())
         );
 
-
         Map<String, Object> response = new LinkedHashMap<>();
         response.put("error", "Ошибка валидации");
         response.put("details", details);
@@ -34,5 +34,11 @@ public class GlobalExceptionHandler {
         log.warn("Ошибка валидации: {}", details);
 
         return response;
+    }
+
+    @ExceptionHandler(NotFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public Map<String, String> handleNotFound(NotFoundException e) {
+        return Map.of("error", e.getMessage());
     }
 }
