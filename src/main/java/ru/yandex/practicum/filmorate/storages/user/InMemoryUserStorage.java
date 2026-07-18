@@ -1,6 +1,5 @@
 package ru.yandex.practicum.filmorate.storages.user;
 
-import jakarta.validation.ValidationException;
 import org.springframework.stereotype.Component;
 import ru.yandex.practicum.filmorate.exeptions.ConditionsNotMetException;
 import ru.yandex.practicum.filmorate.exeptions.DuplicatedDataException;
@@ -62,7 +61,7 @@ public class InMemoryUserStorage implements UserStorage {
     }
 
     @Override
-    public void saveUser(User user) {
+    public void save(User user) {
         users.put(user.getId(), user);
     }
 

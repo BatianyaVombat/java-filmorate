@@ -1,5 +1,6 @@
 package ru.yandex.practicum.filmorate.handler;
 
+import jakarta.validation.ValidationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -38,7 +39,27 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(NotFoundException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
+    @SuppressWarnings("unused")
     public Map<String, String> handleNotFound(NotFoundException e) {
+        log.error("Не смогли найти данные на сервере", e);
+
         return Map.of("error", e.getMessage());
     }
+
+    @ExceptionHandler(Exception.class)
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    @SuppressWarnings("unused")
+    public Map<String, String> handleGeneralException(NotFoundException e) {
+        log.error("Внутренняя ошибка сервера: ", e);
+
+        return Map.of("error", e.getMessage());
+    }
+
+    @ExceptionHandler(ValidationException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @SuppressWarnings("unused")
+    public Map<String, String> handleValidationException(ValidationException e) {
+        return Map.of("error", e.getMessage());
+    }
+
 }

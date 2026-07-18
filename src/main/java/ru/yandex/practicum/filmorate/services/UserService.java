@@ -1,5 +1,6 @@
 package ru.yandex.practicum.filmorate.services;
 
+import jakarta.validation.ValidationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exeptions.NotFoundException;
@@ -7,12 +8,15 @@ import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storages.user.UserStorage;
 
 import java.util.Collection;
+import java.util.HashSet;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 
 @Service
 public class UserService {
     private final UserStorage userStorage;
-
 
     @Autowired
     public UserService(UserStorage userStorage) {
@@ -31,7 +35,7 @@ public class UserService {
         return userStorage.updateUserInfo(newUser);
     }
 
-    /*public void addToFriends(Long userId, Long friendId) {
+    public void addToFriends(Long userId, Long friendId) {
         if (userId.equals(friendId)) {
             throw new ValidationException("Нельзя добавить самого себя в друзья");
         }
@@ -46,8 +50,8 @@ public class UserService {
         user.getFriends().add(friendId);
         friend.getFriends().add(userId);
 
-        userStorage.saveUser(user);
-        userStorage.saveUser(friend);
+        userStorage.save(user);
+        userStorage.save(friend);
     }
 
     public void deleteFromFriends(Long userId, Long friendId) {
@@ -55,14 +59,14 @@ public class UserService {
         User friend = getUserOrThrow(friendId);
 
         if (!user.getFriends().contains(friendId)) {
-            throw new ValidationException("Пользователи не являются друзьями");
+            return;
         }
 
         user.getFriends().remove(friendId);
-        user.getFriends().remove(userId);
+        friend.getFriends().remove(userId);
 
-        userStorage.saveUser(user);
-        userStorage.saveUser(friend);
+        userStorage.save(user);
+        userStorage.save(friend);
     }
 
     public Collection<User> getAllFriends(Long userId) {
@@ -87,12 +91,16 @@ public class UserService {
                 .filter(Optional::isPresent)
                 .map(Optional::get)
                 .collect(Collectors.toList());
-    }*/
+    }
 
     //вспомогательный метод для получения user
     private User getUserOrThrow(Long id) {
         return userStorage.getUserById(id)
                 .orElseThrow(() -> new NotFoundException("Пользователь с id = " + id + " не найден"));
+    }
+
+    public void getUserById(Long id) {
+        getUserOrThrow(id);
     }
 
     //метод для тестов
