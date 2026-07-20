@@ -174,7 +174,7 @@ class FilmorateApplicationTests {
 
         HttpResponse<String> updateResponse = client.send(updateRequest, HttpResponse.BodyHandlers.ofString());
 
-        Assertions.assertEquals(500, updateResponse.statusCode());
+        Assertions.assertEquals(404, updateResponse.statusCode());
 
     }
 
@@ -352,7 +352,7 @@ class FilmorateApplicationTests {
 
         HttpResponse<String> updateResponse = client.send(updateRequest, HttpResponse.BodyHandlers.ofString());
 
-        Assertions.assertEquals(500, updateResponse.statusCode());
+        Assertions.assertEquals(404, updateResponse.statusCode());
     }
 
     @Test

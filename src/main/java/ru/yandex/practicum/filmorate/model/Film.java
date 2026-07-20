@@ -7,6 +7,8 @@ import lombok.*;
 import ru.yandex.practicum.filmorate.annotation.After;
 
 import java.time.LocalDate;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Film.
@@ -29,6 +31,8 @@ public class Film {
 
     @Positive(message = "Длительность фильма должна быть больше нуля")
     private long duration;
+
+    private final Set<Long> likes = new HashSet<>();
 
     //метод проверяет данные User при обновлении и не допускает внезапные null если часть данных не обновляется
     public Film mergeWith(Film newData) {

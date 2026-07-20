@@ -1,77 +1,55 @@
 package ru.yandex.practicum.filmorate.controller;
 
 import jakarta.validation.Valid;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
-import ru.yandex.practicum.filmorate.exeptions.ConditionsNotMetException;
-import ru.yandex.practicum.filmorate.exeptions.DuplicatedDataException;
-import ru.yandex.practicum.filmorate.exeptions.NotFoundException;
 import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.services.UserService;
 
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/users")
 public class UserController {
-    private final Map<Long, User> users = new HashMap<>();
+    private final UserService userService;
+
+    @Autowired
+    public UserController(UserService userService) {
+        this.userService = userService;
+    }
 
     @GetMapping
     public Collection<User> getAll() {
-        return users.values();
+        return userService.getAll();
     }
 
     @PostMapping
     public User createUser(@Valid @RequestBody User user) {
-        if (users.containsValue(user)) {
-            throw new DuplicatedDataException("Пользователь с такими данными уже существует");
-        }
-
-        User newUser = User.builder()
-                .id(getNextUserId())
-                .email(user.getEmail())
-                .login(user.getLogin())
-                .name(user.getName())
-                .birthday(user.getBirthday())
-                .build();
-
-        newUser.normalize();
-        users.put(newUser.getId(), newUser);
-
-        return newUser;
+        return userService.createUser(user);
     }
 
     @PutMapping
     public User updateUserInfo(@Valid @RequestBody User newUser) {
-        if (newUser.getId() == null) {
-            throw new ConditionsNotMetException("Id должен быть указан");
-        }
-
-        if (users.containsKey(newUser.getId())) {
-            User oldUser = users.get(newUser.getId());
-            User updatedUser = oldUser.mergeWith(newUser);
-
-            users.put(newUser.getId(), updatedUser);
-
-            return updatedUser;
-        }
-
-        throw new NotFoundException("Пользователь с id = " + newUser.getId() + " не найден");
+        return userService.updateUserInfo(newUser);
     }
 
-    // вспомогательный метод для генерации идентификатора нового пользователя
-    private long getNextUserId() {
-        long currentMaxId = users.keySet()
-                .stream()
-                .mapToLong(id -> id)
-                .max()
-                .orElse(0);
-
-        return ++currentMaxId;
+    @PutMapping("/{id}/friends/{friendId}")
+    public void addToFriend(@PathVariable("id") Long userId, @PathVariable("friendId") Long friendId) {
+        userService.addToFriends(userId, friendId);
     }
 
-    //вспомогательный метод для тестов
-    public void resetUsers() {
-        users.clear();
+    @DeleteMapping("/{id}/friends/{friendId}")
+    public void deleteFromFriends(@PathVariable("id") Long userId, @PathVariable("friendId") Long friendId) {
+        userService.deleteFromFriends(userId, friendId);
+    }
+
+    @GetMapping("/{id}/friends")
+    public Collection<User> getAllFriends(@PathVariable("id") long userId) {
+        return userService.getAllFriends(userId);
+    }
+
+    @GetMapping("/{id}/friends/common/{otherId}")
+    public Collection<User> getMutualFriends(@PathVariable("id") long userId, @PathVariable("otherId") Long otherId) {
+        return userService.getMutualFriends(userId, otherId);
     }
 }

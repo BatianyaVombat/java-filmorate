@@ -7,6 +7,8 @@ import jakarta.validation.constraints.Pattern;
 import lombok.*;
 
 import java.time.LocalDate;
+import java.util.HashSet;
+import java.util.Set;
 
 @Data
 @EqualsAndHashCode(of = {"email", "login"})
@@ -25,6 +27,8 @@ public class User {
 
     @Past(message = "Дата рождения не может быть в будущем")
     private LocalDate birthday;
+
+    private final Set<Long> friends = new HashSet<>();
 
     //метод проверяет данные User при обновлении и не допускает внезапные null если часть данных не обновляется
     public User mergeWith(User newData) {
