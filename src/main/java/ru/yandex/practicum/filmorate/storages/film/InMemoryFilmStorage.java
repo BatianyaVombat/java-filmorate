@@ -5,10 +5,7 @@ import ru.yandex.practicum.filmorate.exeptions.ConditionsNotMetException;
 import ru.yandex.practicum.filmorate.exeptions.NotFoundException;
 import ru.yandex.practicum.filmorate.model.Film;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 @Component
 public class InMemoryFilmStorage implements FilmStorage {
@@ -27,6 +24,8 @@ public class InMemoryFilmStorage implements FilmStorage {
                 .description(film.getDescription())
                 .releaseDate(film.getReleaseDate())
                 .duration(film.getDuration())
+                .mpa(film.getMpa())
+                .genres(film.getGenres() != null ? film.getGenres() : new HashSet<>())
                 .build();
 
         films.put(newFilm.getId(), newFilm);

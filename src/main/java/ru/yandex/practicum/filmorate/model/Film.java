@@ -36,9 +36,9 @@ public class Film {
 
     private final Set<Long> likes = new HashSet<>(); //лайки
 
-    private final HashSet<Genres> genre; //жанры
+    private final Set<Genres> genres; //жанры
 
-    private final MpaRating rating; //рейтинг МРА
+    private final MpaRating mpa; //рейтинг МРА
 
     //метод проверяет данные Film при обновлении и не допускает внезапные null если часть данных не обновляется
     public Film mergeWith(Film newData) {
@@ -48,8 +48,8 @@ public class Film {
                 .description(newData.getDescription() != null ? newData.getDescription() : this.description)
                 .releaseDate(newData.getReleaseDate() != null ? newData.getReleaseDate() : this.releaseDate)
                 .duration(newData.getDuration())
-                .genre(newData.getGenre())
-                .rating(newData.getRating())
+                .genres(newData.getGenres())
+                .mpa(newData.getMpa())
                 .build();
     }
 }
