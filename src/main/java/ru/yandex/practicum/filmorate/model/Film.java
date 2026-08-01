@@ -48,8 +48,8 @@ public class Film {
                 .description(newData.getDescription() != null ? newData.getDescription() : this.description)
                 .releaseDate(newData.getReleaseDate() != null ? newData.getReleaseDate() : this.releaseDate)
                 .duration(newData.getDuration())
-                .genres(newData.getGenres())
-                .mpa(newData.getMpa())
+                .genres(newData.getGenres() != null ? new HashSet<>(newData.getGenres()) : this.genres)
+                .mpa(newData.getMpa() != null ? newData.getMpa() : this.mpa)
                 .build();
     }
 }
