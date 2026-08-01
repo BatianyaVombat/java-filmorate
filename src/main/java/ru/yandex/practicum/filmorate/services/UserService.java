@@ -3,6 +3,7 @@ package ru.yandex.practicum.filmorate.services;
 import jakarta.validation.ValidationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import ru.yandex.practicum.filmorate.enums.FriendshipStatus;
 import ru.yandex.practicum.filmorate.exeptions.NotFoundException;
 import ru.yandex.practicum.filmorate.model.Friendship;
 import ru.yandex.practicum.filmorate.model.User;
@@ -42,12 +43,30 @@ public class UserService {
         User friend = getUserOrThrow(friendId);
 
         if (user.getFriendRequests().stream()
-                .anyMatch(f -> f.getFriendId().equals(userId))) {
+                .anyMatch(f -> f.getFriendId().equals(userId)
+                        && f.getStatus().equals(FriendshipStatus.CONFIRMED))) {
             throw new ValidationException("Пользователи уже являются друзьями");
         }
 
-        user.getFriendRequests().add(new Friendship(userId, friendId));
-        friend.getFriendRequests().add(new Friendship(friendId, userId));
+        if (user.getFriendRequests().stream()
+                .anyMatch(f -> f.getFriendId().equals(friendId)
+                        && f.getStatus() == FriendshipStatus.PENDING)) {
+            throw new ValidationException("От одного из друзей требуется подтверждение заявки");
+        }
+
+        //надо понять отправлял ли уже пользователь приглашение дружбы
+        boolean hasFriendshipRequest = friend.getFriendRequests().stream()
+                .anyMatch(f -> f.getFriendId().equals(userId)
+                        && f.getStatus() == FriendshipStatus.PENDING);
+
+        //либо обновляем статусы, либо делаем встречные заявки
+        if (hasFriendshipRequest) {
+            friendStatusUpdate(user, friendId);
+            friendStatusUpdate(friend, userId);
+        } else {
+            user.getFriendRequests().add(new Friendship(userId, friendId, FriendshipStatus.PENDING));
+            friend.getFriendRequests().add(new Friendship(friendId, userId, FriendshipStatus.PENDING));
+        }
 
         userStorage.save(user);
         userStorage.save(friend);
@@ -72,6 +91,7 @@ public class UserService {
     public Collection<User> getAllFriends(Long userId) {
         User user = getUserOrThrow(userId);
 
+        //пока без учёта подтверждения
         return user.getFriendRequests().stream()
                 .map(Friendship::getFriendId)
                 .map(this::getUserOrThrow)
@@ -101,6 +121,16 @@ public class UserService {
     private User getUserOrThrow(Long id) {
         return userStorage.getUserById(id)
                 .orElseThrow(() -> new NotFoundException("Пользователь с id = " + id + " не найден"));
+    }
+
+    //обновление статуса дружбы
+    private void friendStatusUpdate(User user, Long friendId) {
+        Friendship friendship = user.getFriendRequests().stream()
+                .filter(f -> f.getFriendId().equals(friendId))
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException("Объект дружбы не найден"));
+
+        friendship.setStatus(FriendshipStatus.CONFIRMED);
     }
 
     public void getUserById(Long id) {

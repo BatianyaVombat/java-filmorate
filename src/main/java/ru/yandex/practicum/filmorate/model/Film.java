@@ -36,9 +36,10 @@ public class Film {
 
     private final Set<Long> likes = new HashSet<>(); //лайки
 
-    private final Set<Genres> genres; //жанры
+    @Builder.Default //сохраняет значение по умолчанию
+    private final Set<Genres> genres = new HashSet<>(); //жанры
 
-    private final MpaRating mpa; //рейтинг МРА
+    private MpaRating mpa; //рейтинг МРА
 
     //метод проверяет данные Film при обновлении и не допускает внезапные null если часть данных не обновляется
     public Film mergeWith(Film newData) {
@@ -48,7 +49,7 @@ public class Film {
                 .description(newData.getDescription() != null ? newData.getDescription() : this.description)
                 .releaseDate(newData.getReleaseDate() != null ? newData.getReleaseDate() : this.releaseDate)
                 .duration(newData.getDuration())
-                .genres(newData.getGenres() != null ? new HashSet<>(newData.getGenres()) : this.genres)
+                .genres(newData.getGenres() != null ? newData.getGenres() : this.genres)
                 .mpa(newData.getMpa() != null ? newData.getMpa() : this.mpa)
                 .build();
     }
