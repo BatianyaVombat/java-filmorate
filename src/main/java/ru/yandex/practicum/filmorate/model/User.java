@@ -20,7 +20,7 @@ public class User {
     private String email;
 
     @NotBlank(message = "Логин не может быть пустым")
-    @Pattern(regexp = "^[a-zA-Z0-9]+$", message = "Логин не должен содержать пробелы") //пробелы и русские буквы не пройдут
+    @Pattern(regexp = "^[a-zA-Z0-9]+$", message = "Логин не должен содержать пробелы")
     private String login;
 
     private String name;
@@ -28,7 +28,7 @@ public class User {
     @Past(message = "Дата рождения не может быть в будущем")
     private LocalDate birthday;
 
-    private final Set<Long> friends = new HashSet<>();
+    private final Set<Friendship> friendRequests = new HashSet<>(); //заявки в друзья
 
     //метод проверяет данные User при обновлении и не допускает внезапные null если часть данных не обновляется
     public User mergeWith(User newData) {

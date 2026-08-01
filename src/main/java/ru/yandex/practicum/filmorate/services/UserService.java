@@ -4,13 +4,11 @@ import jakarta.validation.ValidationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exeptions.NotFoundException;
+import ru.yandex.practicum.filmorate.model.Friendship;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storages.user.UserStorage;
 
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 
@@ -43,12 +41,13 @@ public class UserService {
         User user = getUserOrThrow(userId);
         User friend = getUserOrThrow(friendId);
 
-        if (user.getFriends().contains(friendId)) {
+        if (user.getFriendRequests().stream()
+                .anyMatch(f -> f.getFriendId().equals(userId))) {
             throw new ValidationException("Пользователи уже являются друзьями");
         }
 
-        user.getFriends().add(friendId);
-        friend.getFriends().add(userId);
+        user.getFriendRequests().add(new Friendship(userId, friendId));
+        friend.getFriendRequests().add(new Friendship(friendId, userId));
 
         userStorage.save(user);
         userStorage.save(friend);
@@ -58,12 +57,13 @@ public class UserService {
         User user = getUserOrThrow(userId);
         User friend = getUserOrThrow(friendId);
 
-        if (!user.getFriends().contains(friendId)) {
+        if (user.getFriendRequests().stream()
+                .noneMatch(f -> f.getFriendId().equals(friendId))) {
             return;
         }
 
-        user.getFriends().remove(friendId);
-        friend.getFriends().remove(userId);
+        user.getFriendRequests().removeIf(f -> f.getFriendId().equals(friendId));
+        friend.getFriendRequests().removeIf(f -> f.getFriendId().equals(userId));
 
         userStorage.save(user);
         userStorage.save(friend);
@@ -72,10 +72,9 @@ public class UserService {
     public Collection<User> getAllFriends(Long userId) {
         User user = getUserOrThrow(userId);
 
-        return user.getFriends().stream()
-                .map(userStorage::getUserById)
-                .filter(Optional::isPresent)
-                .map(Optional::get)
+        return user.getFriendRequests().stream()
+                .map(Friendship::getFriendId)
+                .map(this::getUserOrThrow)
                 .collect(Collectors.toList());
     }
 
@@ -83,13 +82,18 @@ public class UserService {
         User user = getUserOrThrow(userId);
         User other = getUserOrThrow(otherId);
 
-        Set<Long> commonIds = new HashSet<>(user.getFriends());
-        commonIds.retainAll(other.getFriends());
+        Set<Long> userFriendIds = user.getFriendRequests().stream()
+                .map(Friendship::getFriendId)
+                .collect(Collectors.toSet());
 
-        return commonIds.stream()
-                .map(userStorage::getUserById)
-                .filter(Optional::isPresent)
-                .map(Optional::get)
+        Set<Long> otherFriendIds = other.getFriendRequests().stream()
+                .map(Friendship::getFriendId)
+                .collect(Collectors.toSet());
+
+        userFriendIds.retainAll(otherFriendIds);
+
+        return userFriendIds.stream()
+                .map(this::getUserOrThrow)
                 .collect(Collectors.toList());
     }
 

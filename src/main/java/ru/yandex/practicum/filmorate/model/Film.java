@@ -5,6 +5,8 @@ import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 import lombok.*;
 import ru.yandex.practicum.filmorate.annotation.After;
+import ru.yandex.practicum.filmorate.enums.Genres;
+import ru.yandex.practicum.filmorate.enums.MpaRating;
 
 import java.time.LocalDate;
 import java.util.HashSet;
@@ -32,9 +34,13 @@ public class Film {
     @Positive(message = "Длительность фильма должна быть больше нуля")
     private long duration;
 
-    private final Set<Long> likes = new HashSet<>();
+    private final Set<Long> likes = new HashSet<>(); //лайки
 
-    //метод проверяет данные User при обновлении и не допускает внезапные null если часть данных не обновляется
+    private final HashSet<Genres> genre; //жанры
+
+    private final MpaRating rating; //рейтинг МРА
+
+    //метод проверяет данные Film при обновлении и не допускает внезапные null если часть данных не обновляется
     public Film mergeWith(Film newData) {
         return Film.builder()
                 .id(newData.getId() != null ? newData.getId() : this.id)
@@ -42,6 +48,8 @@ public class Film {
                 .description(newData.getDescription() != null ? newData.getDescription() : this.description)
                 .releaseDate(newData.getReleaseDate() != null ? newData.getReleaseDate() : this.releaseDate)
                 .duration(newData.getDuration())
+                .genre(newData.getGenre())
+                .rating(newData.getRating())
                 .build();
     }
 }
