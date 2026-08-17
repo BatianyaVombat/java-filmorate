@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.logging.log4j.util.InternalException;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -71,5 +72,12 @@ public class GlobalExceptionHandler {
         e.getBindingResult().getFieldErrors().forEach(fe -> errors.add(fe.getDefaultMessage()));
         log.warn("Ошибка валидации DTO: {}", errors);
         return Map.of("error", "Ошибка валидации", "details", errors);
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @SuppressWarnings("unused")
+    public Map<String, String> handleJsonError(HttpMessageNotReadableException e) {
+        return Map.of("error", "Некорректное тело запроса");
     }
 }
