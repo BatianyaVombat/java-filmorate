@@ -147,8 +147,8 @@ public class FilmRepository extends BaseRepository<Film> {
         execute(sqlDel, filmId);
 
         genres.forEach(genreId -> {
-            String sql_insert = "INSERT INTO Film_Genres (film_id, genre_id) VALUES (?, ?)";
-            execute(sql_insert, filmId, genreId);
+            String sqlInsert = "INSERT INTO Film_Genres (film_id, genre_id) VALUES (?, ?)";
+            execute(sqlInsert, filmId, genreId);
         });
     }
 }
