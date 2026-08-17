@@ -5,11 +5,19 @@ import lombok.RequiredArgsConstructor;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
+import org.springframework.boot.test.autoconfigure.jdbc.JdbcTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.test.context.jdbc.Sql;
 import ru.yandex.practicum.filmorate.dal.FilmRepository;
+import ru.yandex.practicum.filmorate.dal.GenreRepository;
+import ru.yandex.practicum.filmorate.dal.MpaRepository;
 import ru.yandex.practicum.filmorate.dal.UserRepository;
+import ru.yandex.practicum.filmorate.dal.mappers.FilmRowMapper;
+import ru.yandex.practicum.filmorate.dal.mappers.GenresRowMapper;
+import ru.yandex.practicum.filmorate.dal.mappers.MpaRowMapper;
+import ru.yandex.practicum.filmorate.dal.mappers.UserRowMapper;
 import ru.yandex.practicum.filmorate.enums.FriendshipStatus;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.User;
@@ -22,8 +30,18 @@ import java.util.Set;
 import static org.assertj.core.api.Assertions.assertThat;
 
 
-@SpringBootTest
-@AutoConfigureMockMvc
+@JdbcTest
+@AutoConfigureTestDatabase
+@Import({
+        UserRepository.class,
+        FilmRepository.class,
+        UserRowMapper.class,
+        FilmRowMapper.class,
+        GenreRepository.class,
+        MpaRepository.class,
+        GenresRowMapper.class,
+        MpaRowMapper.class
+})
 @RequiredArgsConstructor(onConstructor_ = @Autowired)
 class FilmorateApplicationTests {
     private final UserRepository userRepository;
