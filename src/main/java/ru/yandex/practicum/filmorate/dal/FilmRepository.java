@@ -16,12 +16,19 @@ public class FilmRepository extends BaseRepository<Film> {
     }
 
     public List<Film> findAll() {
-        String sqlSelect = "SELECT * FROM Films";
+        String sqlSelect = """
+                        SELECT *
+                        FROM Films
+                """;
         List<Film> rawFilms = findMany(sqlSelect);
         List<Film> films = new ArrayList<>();
 
         rawFilms.forEach(oldFilm -> {
-            String sqlGenres = "SELECT genre_id FROM Film_Genres WHERE film_id = ?";
+            String sqlGenres = """
+                            SELECT genre_id
+                            FROM Film_Genres
+                            WHERE film_id = ?
+                    """;
             List<Long> genresIds = jdbc.queryForList(sqlGenres, Long.class, oldFilm.getId());
 
             Film reassFilm = Film.builder()
@@ -49,7 +56,11 @@ public class FilmRepository extends BaseRepository<Film> {
         }
 
         //берём все id-шники жанров
-        String sqlGenres = "SELECT genre_id FROM Film_Genres WHERE film_id = ?";
+        String sqlGenres = """
+                        SELECT genre_id
+                        FROM Film_Genres
+                        WHERE film_id = ?
+                """;
         List<Long> genresIds = jdbc.queryForList(sqlGenres, Long.class, id);
 
         Film foundFilm = Film.builder()
@@ -66,8 +77,10 @@ public class FilmRepository extends BaseRepository<Film> {
     }
 
     public Film saveFilm(Film film) {
-        String sqlFilm = "INSERT INTO Films (name, description, releaseDate, duration, rating_id) " +
-                "VALUES (?, ?, ?, ?, ?)";
+        String sqlFilm = """
+                       INSERT INTO Films (name, description, releaseDate, duration, rating_id)
+                       VALUES (?, ?, ?, ?, ?)
+                """;
         jdbc.update(sqlFilm, film.getName(), film.getDescription(), film.getReleaseDate(),
                 film.getDuration(), film.getMpaId());
 
@@ -85,8 +98,10 @@ public class FilmRepository extends BaseRepository<Film> {
     }
 
     public void updateFilm(Film film) {
-        String sqlUpd = "UPDATE Films SET name = ?, description = ?, releaseDate = ?, duration = ?, " +
-                "rating_id = ? WHERE id = ?";
+        String sqlUpd = """
+                    UPDATE Films SET name = ?, description = ?, releaseDate = ?, duration = ?, rating_id = ?
+                    WHERE id = ?
+                """;
         update(sqlUpd, film.getName(), film.getDescription(), film.getReleaseDate(), film.getDuration(),
                 film.getMpaId(), film.getId());
 
@@ -94,19 +109,30 @@ public class FilmRepository extends BaseRepository<Film> {
     }
 
     public void addLike(Long filmId, Long userId) {
-        String sqlLike = "INSERT INTO Film_Likes (film_id, user_id) VALUES (?, ?)";
+        String sqlLike = """
+                      INSERT INTO Film_Likes (film_id, user_id)
+                      VALUES (?, ?)
+                """;
         execute(sqlLike, filmId, userId);
     }
 
     public void removeLike(Long filmId, Long userId) {
-        String sqlRemove = "DELETE FROM Film_Likes WHERE film_id = ? AND user_id = ?";
+        String sqlRemove = """
+                        DELETE FROM Film_Likes
+                        WHERE film_id = ? AND user_id = ?
+                """;
         execute(sqlRemove, filmId, userId);
     }
 
     public List<Film> getPopularFilms(Long count) {
-        String sqlPopular = "SELECT f.id, COUNT(fl.user_id) AS like_count " +
-                "FROM Films f LEFT JOIN Film_Likes fl ON f.id = fl.film_id " +
-                "GROUP BY f.id ORDER BY like_count DESC LIMIT ?";
+        String sqlPopular = """
+                        SELECT f.id, COUNT(fl.user_id) AS like_count
+                        FROM Films f
+                        LEFT JOIN Film_Likes fl ON f.id = fl.film_id
+                        GROUP BY f.id
+                        ORDER BY like_count DESC
+                        LIMIT ?
+                """;
         List<Map<String, Object>> rows = jdbc.queryForList(sqlPopular, count);
         List<Film> finalList = new ArrayList<>();
 
@@ -143,11 +169,17 @@ public class FilmRepository extends BaseRepository<Film> {
             genres = new HashSet<>();
         }
 
-        String sqlDel = "DELETE FROM Film_Genres WHERE film_id = ?";
+        String sqlDel = """
+                    DELETE FROM Film_Genres
+                    WHERE film_id = ?
+                """;
         execute(sqlDel, filmId);
 
         genres.forEach(genreId -> {
-            String sqlInsert = "INSERT INTO Film_Genres (film_id, genre_id) VALUES (?, ?)";
+            String sqlInsert = """
+                            INSERT INTO Film_Genres (film_id, genre_id)
+                            VALUES (?, ?)
+                    """;
             execute(sqlInsert, filmId, genreId);
         });
     }

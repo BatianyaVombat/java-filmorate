@@ -1,6 +1,6 @@
 package ru.yandex.practicum.filmorate.dal.mappers;
 
-import org.springframework.stereotype.Component;
+import lombok.experimental.UtilityClass;
 import ru.yandex.practicum.filmorate.dto.film.FilmResponse;
 import ru.yandex.practicum.filmorate.dto.film.NewFilmRequest;
 import ru.yandex.practicum.filmorate.dto.genres.GenreIdRequest;
@@ -14,9 +14,9 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 
-@Component
+@UtilityClass
 public class FilmMapper {
-    public static Film toEntity(NewFilmRequest request) {
+    public Film toEntity(NewFilmRequest request) {
         Set<Long> genreIds = request.getGenres() != null
                 ? request.getGenres().stream()
                 .map(GenreIdRequest::getId)
@@ -33,7 +33,7 @@ public class FilmMapper {
                 .build();
     }
 
-    public static FilmResponse toResponse(Film film, MpaResponse mpa, List<GenreResponse> genres) {
+    public FilmResponse toResponse(Film film, MpaResponse mpa, List<GenreResponse> genres) {
         return FilmResponse.builder()
                 .id(film.getId())
                 .name(film.getName())

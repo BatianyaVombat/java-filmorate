@@ -1,13 +1,13 @@
 package ru.yandex.practicum.filmorate.dal.mappers;
 
-import org.springframework.stereotype.Component;
+import lombok.experimental.UtilityClass;
 import ru.yandex.practicum.filmorate.dto.user.NewUserRequest;
 import ru.yandex.practicum.filmorate.dto.user.UserResponse;
 import ru.yandex.practicum.filmorate.model.User;
 
-@Component
+@UtilityClass
 public class UserMapper {
-    public static User toEntity(NewUserRequest request) {
+    public User toEntity(NewUserRequest request) {
         return User.builder()
                 .email(request.getEmail())
                 .login(request.getLogin())
@@ -16,7 +16,7 @@ public class UserMapper {
                 .build();
     }
 
-    public static UserResponse toResponse(User user) {
+    public UserResponse toResponse(User user) {
         return UserResponse.builder()
                 .id(user.getId())
                 .email(user.getEmail())

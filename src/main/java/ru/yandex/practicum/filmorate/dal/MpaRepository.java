@@ -15,13 +15,21 @@ public class MpaRepository extends BaseRepository<MpaResponse> {
     }
 
     public List<MpaResponse> findAll() {
-        String sqlFindAll = "SELECT * FROM MPA_Ratings ORDER BY id";
+        String sqlFindAll = """
+                        SELECT *
+                        FROM MPA_Ratings
+                        ORDER BY id
+                """;
 
         return findMany(sqlFindAll);
     }
 
     public Optional<MpaResponse> findById(Long id) {
-        String sqlFindMpa = "SELECT * FROM MPA_Ratings WHERE id = ?";
+        String sqlFindMpa = """
+                        SELECT *
+                        FROM MPA_Ratings
+                        WHERE id = ?
+                """;
 
         return findOne(sqlFindMpa, id);
     }

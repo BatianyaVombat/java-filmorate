@@ -16,13 +16,20 @@ public class GenreRepository extends BaseRepository<GenreResponse> {
     }
 
     public List<GenreResponse> findAll() {
-        String sqlFindGenres = "SELECT * FROM Genres ORDER BY id";
+        String sqlFindGenres = """
+                            SELECT *
+                            FROM Genres
+                            ORDER BY id
+                """;
 
         return findMany(sqlFindGenres);
     }
 
     public Optional<GenreResponse> findById(Long id) {
-        String sqlFindOne = "SELECT * FROM Genres WHERE id = ?";
+        String sqlFindOne = """
+                        SELECT *
+                        FROM Genres WHERE id = ?
+                """;
 
         return findOne(sqlFindOne, id);
     }
