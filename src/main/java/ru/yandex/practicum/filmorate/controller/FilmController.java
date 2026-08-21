@@ -3,10 +3,14 @@ package ru.yandex.practicum.filmorate.controller;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+import ru.yandex.practicum.filmorate.dto.film.FilmResponse;
+import ru.yandex.practicum.filmorate.dto.film.NewFilmRequest;
+import ru.yandex.practicum.filmorate.dto.film.UpdateFilmRequest;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.services.FilmService;
 
 import java.util.Collection;
+import java.util.List;
 
 @RestController
 @RequestMapping("/films")
@@ -19,18 +23,23 @@ public class FilmController {
     }
 
     @GetMapping
-    public Collection<Film> getAllFilms() {
+    public List<FilmResponse> getAllFilms() {
         return filmService.getAllFilms();
     }
 
     @PostMapping
-    public Film addNewFilm(@Valid @RequestBody Film film) {
-        return filmService.addNewFilm(film);
+    public FilmResponse addNewFilm(@Valid @RequestBody NewFilmRequest request) {
+        return filmService.addNewFilm(request);
+    }
+
+    @GetMapping("/{id}")
+    public FilmResponse getFilmById(@PathVariable Long id) {
+        return filmService.getFilmById(id);
     }
 
     @PutMapping
-    public Film updateFilmInfo(@Valid @RequestBody Film newFilm) {
-        return filmService.updateFilmInfo(newFilm);
+    public FilmResponse updateFilmInfo(@Valid @RequestBody UpdateFilmRequest request) {
+        return filmService.updateFilm(request.getId(), request);
     }
 
     @PutMapping("/{id}/like/{userId}")

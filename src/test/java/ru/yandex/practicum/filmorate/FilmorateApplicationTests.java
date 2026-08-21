@@ -1,403 +1,255 @@
 package ru.yandex.practicum.filmorate;
 
-import org.junit.jupiter.api.*;
-import org.springframework.boot.test.context.SpringBootTest;
+import lombok.RequiredArgsConstructor;
 
-import java.io.IOException;
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
+import org.springframework.boot.test.autoconfigure.jdbc.JdbcTest;
+import org.springframework.context.annotation.Import;
+import org.springframework.jdbc.core.JdbcTemplate;
+import ru.yandex.practicum.filmorate.dal.FilmRepository;
+import ru.yandex.practicum.filmorate.dal.GenreRepository;
+import ru.yandex.practicum.filmorate.dal.MpaRepository;
+import ru.yandex.practicum.filmorate.dal.UserRepository;
+import ru.yandex.practicum.filmorate.dal.mappers.FilmRowMapper;
+import ru.yandex.practicum.filmorate.dal.mappers.GenresRowMapper;
+import ru.yandex.practicum.filmorate.dal.mappers.MpaRowMapper;
+import ru.yandex.practicum.filmorate.dal.mappers.UserRowMapper;
+import ru.yandex.practicum.filmorate.enums.FriendshipStatus;
+import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.model.User;
 
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
+import java.time.LocalDate;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+
+@JdbcTest
+@AutoConfigureTestDatabase
+@Import({
+        UserRepository.class,
+        FilmRepository.class,
+        UserRowMapper.class,
+        FilmRowMapper.class,
+        GenreRepository.class,
+        MpaRepository.class,
+        GenresRowMapper.class,
+        MpaRowMapper.class
+})
+@RequiredArgsConstructor(onConstructor_ = @Autowired)
 class FilmorateApplicationTests {
-    private static HttpClient client;
-
-    @BeforeAll
-    static void setUp() {
-        client = HttpClient.newHttpClient();
-    }
+    private final UserRepository userRepository;
+    private final FilmRepository filmRepository;
+    private final JdbcTemplate jdbc;
 
     @BeforeEach
-    void setUpEach() throws Exception {
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create("http://localhost:8080/test/reset"))
-                .DELETE()
-                .build();
-        client.send(request, HttpResponse.BodyHandlers.ofString());
+    void clearDatabase() {
+        jdbc.update("DELETE FROM Film_Likes");
+        jdbc.update("DELETE FROM Film_Genres");
+        jdbc.update("DELETE FROM Friends");
+        jdbc.update("DELETE FROM Films");
+        jdbc.update("DELETE FROM Users");
     }
 
-    //---------------Проверка User контроллера--------------
-    @Test
-    @DisplayName("Возвращает пустой ответ, потому что пользователи ещё не добавлены")
-    void shouldReturnEmptyListWhenNoUsers() throws Exception {
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create("http://localhost:8080/users"))
-                .GET()
-                .build();
-
-        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-
-        Assertions.assertEquals(200, response.statusCode());
-        Assertions.assertEquals("[]", response.body().trim()); // пустой JSON-массив
+    //-------------Подготовка
+    private Long insertUser(String email, String login, String name, String birthday) {
+        jdbc.update(
+                "INSERT INTO Users (email, login, name, birthday) VALUES (?, ?, ?, ?)",
+                email, login, name, java.sql.Date.valueOf(birthday)
+        );
+        // получаем id
+        return jdbc.queryForObject("SELECT id FROM Users WHERE email = ?", Long.class, email);
     }
 
-    @Test
-    @DisplayName("Должен вернуть 400 если тело запроса на создание пользователя пустое")
-    void shouldReturn400ForEmptyBodyOnUserCreation() throws IOException, InterruptedException {
-        String jsonBody = "";
-
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create("http://localhost:8080/users"))
-                .POST(HttpRequest.BodyPublishers.ofString(jsonBody))
-                .header("Content-Type", "application/json")
-                .build();
-
-        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-
-        Assertions.assertEquals(400, response.statusCode());
-
-        String responseBody = response.body();
-        Assertions.assertTrue(responseBody.contains("error"), "Тело ответа должно содержать поле 'error'");
+    private Long insertFilm(String name, String description, String releaseDate, long duration, long ratingId) {
+        jdbc.update(
+                "INSERT INTO Films (name, description, releaseDate, duration, rating_id) VALUES (?, ?, ?, ?, ?)",
+                name, description, java.sql.Date.valueOf(releaseDate), duration, ratingId
+        );
+        return jdbc.queryForObject("SELECT id FROM Films WHERE name = ?", Long.class, name);
     }
 
+    //вставка жанра в связующую таблицу
+    private void insertFilmGenre(long filmId, long genreId) {
+        jdbc.update("INSERT INTO Film_Genres (film_id, genre_id) VALUES (?, ?)", filmId, genreId);
+    }
+
+    //--------------Тестирование UserRepository
     @Test
-    @DisplayName("Создание пользователя с валидными данными")
-    void shouldCreateUserIfFieldsValid() throws Exception {
-        String jsonBody = "{\"id\":1,\"login\":\"BatyaniaVombat\",\"name\":\"Name\"," +
-                "\"email\":\"alex.strange@yandex.ru\",\"birthday\":\"1993-06-20\"}";
+    void findByIdShouldReturnUser() {
+        Long id = insertUser("test@example.com", "testLogin", "Test User", "1990-01-01");
 
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create("http://localhost:8080/users"))
-                .POST(HttpRequest.BodyPublishers.ofString(jsonBody))
-                .header("Content-Type", "application/json")
-                .build();
+        Optional<User> userOpt = userRepository.findById(id);
 
-        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-
-        Assertions.assertEquals(200, response.statusCode());
-
-        String responseBody = response.body();
-        Assertions.assertTrue(responseBody.contains("\"login\":\"BatyaniaVombat\""));
-        Assertions.assertTrue(responseBody.contains("\"email\":\"alex.strange@yandex.ru\""));
-        Assertions.assertTrue(responseBody.contains("\"id\":"));
+        assertThat(userOpt)
+                .isPresent()
+                .hasValueSatisfying(user -> {
+                    assertThat(user.getId()).isEqualTo(id);
+                    assertThat(user.getEmail()).isEqualTo("test@example.com");
+                });
     }
 
     @Test
-    @DisplayName("Создание пользователя с невалидными данными")
-    void shouldReturnListOfErrorsIfUserFieldsNotValid() throws Exception {
-        String jsonBody = "{\"id\":1,\"login\":\"   \",\"name\":\"Name\"," +
-                "\"email\":\"этоне!почта\",\"birthday\":\"2093-06-20\"}";
-
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create("http://localhost:8080/users"))
-                .POST(HttpRequest.BodyPublishers.ofString(jsonBody))
-                .header("Content-Type", "application/json")
-                .build();
-
-        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-
-        Assertions.assertEquals(400, response.statusCode());
-
-        String responseBody = response.body();
-        Assertions.assertTrue(responseBody.contains("Дата рождения не может быть в будущем"));
-        Assertions.assertTrue(responseBody.contains("Электронная почта не может быть пустой " +
-                "и должна иметь корректный формат"));
-        Assertions.assertTrue(responseBody.contains("Логин не должен содержать пробелы"));
+    void findByIdShouldReturnEmpty() {
+        Optional<User> userOpt = userRepository.findById(999L);
+        assertThat(userOpt).isEmpty();
     }
 
     @Test
-    @DisplayName("Успешное обновление данных о пользователе")
-    void shouldUpdateUserCorrectly() throws Exception {
-        String jsonCreate = "{\"id\":1,\"login\":\"OldLogin\",\"name\":\"OldName\"," +
-                "\"email\":\"old@example.com\",\"birthday\":\"1990-01-01\"}";
-
-        HttpRequest createRequest = HttpRequest.newBuilder()
-                .uri(URI.create("http://localhost:8080/users"))
-                .POST(HttpRequest.BodyPublishers.ofString(jsonCreate))
-                .header("Content-Type", "application/json")
-                .build();
-
-        HttpResponse<String> createResponse = client.send(createRequest, HttpResponse.BodyHandlers.ofString());
-
-        //получаем id из тела ответа
-        Long userId = getId(createResponse.body());
-
-        //обновляем данные пользователя
-        String jsonUpdate = String.format("{\"id\":%d,\"login\":\"newLogin\",\"name\":\"New Name\"," +
-                "\"email\":\"new@example.com\",\"birthday\":\"1995-05-05\"}", userId);
-
-        HttpRequest updateRequest = HttpRequest.newBuilder()
-                .uri(URI.create("http://localhost:8080/users"))
-                .PUT(HttpRequest.BodyPublishers.ofString(jsonUpdate))
-                .header("Content-Type", "application/json")
-                .build();
-
-        HttpResponse<String> updateResponse = client.send(updateRequest, HttpResponse.BodyHandlers.ofString());
-
-        Assertions.assertEquals(200, updateResponse.statusCode());
-        String responseBody = updateResponse.body();
-        Assertions.assertTrue(responseBody.contains("\"login\":\"newLogin\""));
-        Assertions.assertTrue(responseBody.contains("\"name\":\"New Name\""));
-        Assertions.assertTrue(responseBody.contains("\"email\":\"new@example.com\""));
-        Assertions.assertTrue(responseBody.contains("\"birthday\":\"1995-05-05\""));
-
-        //убеждаемся что id тот же
-        Assertions.assertTrue(responseBody.contains("\"id\":" + userId));
+    void findByEmail_shouldReturnUser() {
+        insertUser("test@example.com", "testLogin", "Test User", "1990-01-01");
+        Optional<User> userOpt = userRepository.findByEmail("test@example.com");
+        assertThat(userOpt).isPresent();
+        assertThat(userOpt.get().getLogin()).isEqualTo("testLogin");
     }
 
     @Test
-    @DisplayName("Вернёт 500 если при обновлении данных о пользователе нужный id не найден")
-    void shouldReturn500IfUserIdIsNotFound() throws Exception {
-        String jsonCreate = "{\"id\":1,\"login\":\"OldLogin\",\"name\":\"OldName\"," +
-                "\"email\":\"old@example.com\",\"birthday\":\"1990-01-01\"}";
+    void findAllShouldReturnAllUsers() {
+        insertUser("u1@example.com", "login1", "User1", "1990-01-01");
+        insertUser("u2@example.com", "login2", "User2", "1991-02-02");
 
-        HttpRequest createRequest = HttpRequest.newBuilder()
-                .uri(URI.create("http://localhost:8080/users"))
-                .POST(HttpRequest.BodyPublishers.ofString(jsonCreate))
-                .header("Content-Type", "application/json")
-                .build();
-
-        HttpResponse<String> createResponse = client.send(createRequest, HttpResponse.BodyHandlers.ofString());
-
-        Assertions.assertEquals(200, createResponse.statusCode());
-
-        //обновляем данные несуществующего пользователя
-        String jsonUpdate = "{\"id\":4,\"login\":\"newLogin\",\"name\":\"New Name\"," +
-                "\"email\":\"new@example.com\",\"birthday\":\"1995-05-05\"}";
-
-        HttpRequest updateRequest = HttpRequest.newBuilder()
-                .uri(URI.create("http://localhost:8080/users"))
-                .PUT(HttpRequest.BodyPublishers.ofString(jsonUpdate))
-                .header("Content-Type", "application/json")
-                .build();
-
-        HttpResponse<String> updateResponse = client.send(updateRequest, HttpResponse.BodyHandlers.ofString());
-
-        Assertions.assertEquals(404, updateResponse.statusCode());
-
+        List<User> users = userRepository.findAll();
+        assertThat(users).hasSize(2);
     }
 
     @Test
-    @DisplayName("Вернёт 500 если при обновлении данных о пользователе ввели некорректные значения")
-    void shouldReturn500IfUserUpdateInfoIsInvalid() throws Exception {
-        String jsonCreate = "{\"id\":1,\"login\":\"OldLogin\",\"name\":\"OldName\"," +
-                "\"email\":\"old@example.com\",\"birthday\":\"1990-01-01\"}";
-
-        HttpRequest createRequest = HttpRequest.newBuilder()
-                .uri(URI.create("http://localhost:8080/users"))
-                .POST(HttpRequest.BodyPublishers.ofString(jsonCreate))
-                .header("Content-Type", "application/json")
+    void saveUserShouldGenerateId() {
+        User user = User.builder()
+                .email("new@example.com")
+                .login("newLogin")
+                .name("New User")
+                .birthday(LocalDate.of(2000, 1, 1))
                 .build();
 
-        HttpResponse<String> createResponse = client.send(createRequest, HttpResponse.BodyHandlers.ofString());
+        User saved = userRepository.saveUser(user);
 
-        //получаем id из тела ответа
-        Long userId = getId(createResponse.body());
-
-        //неудачно обновляем данные пользователя
-        String jsonUpdate = String.format("{\"id\":%d,\"login\":\"new Login\",\"name\":\"New Name\"," +
-                "\"email\":\"забыл_почту!@\",\"birthday\":\"2095-05-05\"}", userId);
-
-        HttpRequest updateRequest = HttpRequest.newBuilder()
-                .uri(URI.create("http://localhost:8080/users"))
-                .PUT(HttpRequest.BodyPublishers.ofString(jsonUpdate))
-                .header("Content-Type", "application/json")
-                .build();
-
-        HttpResponse<String> updateResponse = client.send(updateRequest, HttpResponse.BodyHandlers.ofString());
-        Assertions.assertEquals(400, updateResponse.statusCode());
-    }
-
-    //---------------Проверка Films контроллера--------------
-    @Test
-    @DisplayName("Возвращает пустое тело, потому что фильмы ещё не добавлены")
-    void shouldReturnEmptyListWhenNoFilms() throws Exception {
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create("http://localhost:8080/films"))
-                .GET()
-                .build();
-
-        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-
-        Assertions.assertEquals(200, response.statusCode());
-        Assertions.assertEquals("[]", response.body().trim()); // пустой JSON-массив
+        assertThat(saved.getId()).isNotNull();
+        assertThat(userRepository.findByEmail("new@example.com")).isPresent();
     }
 
     @Test
-    @DisplayName("Должен вернуть 400 если тело запроса на создание фильма пустое")
-    void shouldReturn400ForEmptyBodyOnFilmCreation() throws IOException, InterruptedException {
-        String jsonBody = "";
+    void updateUserShouldChangeEmail() {
+        Long id = insertUser("old@example.com", "oldLogin", "Old User", "1990-01-01");
+        User user = userRepository.findById(id).get();
+        user.setEmail("new@example.com");
 
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create("http://localhost:8080/films"))
-                .POST(HttpRequest.BodyPublishers.ofString(jsonBody))
-                .header("Content-Type", "application/json")
-                .build();
+        userRepository.updateUser(user);
 
-        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-
-        Assertions.assertEquals(400, response.statusCode());
-
-        String responseBody = response.body();
-        Assertions.assertTrue(responseBody.contains("error"), "Тело ответа должно содержать поле 'error'");
+        assertThat(userRepository.findById(id).get().getEmail()).isEqualTo("new@example.com");
     }
 
     @Test
-    @DisplayName("Создание фильма с валидными данными")
-    void shouldCreateFilmIfFieldsValid() throws Exception {
-        String jsonBody = "{\"id\":1,\"name\":\"Человек-Паук\",\"description\":\"Прыгает по крышам," +
-                " стреляет паутиной\",\"releaseDate\":\"2002-05-15\",\"duration\":120}";
+    void friendLifecycleShouldWork() {
+        Long user1 = insertUser("u1@example.com", "login1", "User1", "1990-01-01");
+        Long user2 = insertUser("u2@example.com", "login2", "User2", "1991-02-02");
 
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create("http://localhost:8080/films"))
-                .POST(HttpRequest.BodyPublishers.ofString(jsonBody))
-                .header("Content-Type", "application/json")
-                .build();
+        userRepository.addFriend(user1, user2, FriendshipStatus.CONFIRMED);
 
-        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+        List<User> friends = userRepository.findFriends(user1);
+        assertThat(friends).hasSize(1);
+        assertThat(friends.getFirst().getId()).isEqualTo(user2);
 
-        Assertions.assertEquals(200, response.statusCode());
+        userRepository.removeFriend(user1, user2);
 
-        String responseBody = response.body();
-        Assertions.assertTrue(responseBody.contains("\"name\":\"Человек-Паук\""));
-        Assertions.assertTrue(responseBody.contains("\"releaseDate\":\"2002-05-15\""));
-        Assertions.assertTrue(responseBody.contains("\"id\":"));
+        assertThat(userRepository.findFriends(user1)).isEmpty();
+    }
+
+    //--------------Тестирование FilmRepository
+    @Test
+    void findByIdShouldReturnFilmWithGenres() {
+        Long filmId = insertFilm("Film", "Desc", "2000-01-01", 120, 1);
+        insertFilmGenre(filmId, 1);
+        insertFilmGenre(filmId, 2);
+
+        Optional<Film> filmOpt = filmRepository.findById(filmId);
+
+        assertThat(filmOpt).isPresent();
+        assertThat(filmOpt.get().getGenresIds()).containsExactlyInAnyOrder(1L, 2L);
     }
 
     @Test
-    @DisplayName("Создание фильма с невалидными данными")
-    void shouldReturnListOfErrorsIfFilmFieldsNotValid() throws Exception {
-        String invalidDescription = "a".repeat(201);
-        String jsonBody = String.format("{\"id\":1,\"name\":\"\",\"description\":\"%s\"," +
-                "\"releaseDate\":\"1894-05-15\",\"duration\":-10}", invalidDescription);
+    void findAllShouldReturnAllFilms() {
+        insertFilm("Film1", "Desc1", "2000-01-01", 120, 1);
+        insertFilm("Film2", "Desc2", "2001-02-02", 130, 2);
 
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create("http://localhost:8080/films"))
-                .POST(HttpRequest.BodyPublishers.ofString(jsonBody))
-                .header("Content-Type", "application/json")
-                .build();
-
-        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-
-        Assertions.assertEquals(400, response.statusCode());
-
-        String responseBody = response.body();
-        Assertions.assertTrue(responseBody.contains("Название не может быть пустым"));
-        Assertions.assertTrue(responseBody.contains("Максимальная длина описания — 200 символов"));
-        Assertions.assertTrue(responseBody.contains("Дата должна быть позже указанной"));
-        Assertions.assertTrue(responseBody.contains("Длительность фильма должна быть больше нуля"));
+        List<Film> films = filmRepository.findAll();
+        assertThat(films).hasSize(2);
     }
 
     @Test
-    @DisplayName("Должен успешно обновить данные о фильме")
-    void shouldUpdateFilmCorrectly() throws IOException, InterruptedException {
-        String oldJsonBody = "{\"id\":1,\"name\":\"Человек-Паук\",\"description\":\"Прыгает по крышам," +
-                " стреляет паутиной\",\"releaseDate\":\"2004-05-15\",\"duration\":120}";
-
-        HttpRequest oldRequest = HttpRequest.newBuilder()
-                .uri(URI.create("http://localhost:8080/films"))
-                .POST(HttpRequest.BodyPublishers.ofString(oldJsonBody))
-                .header("Content-Type", "application/json")
+    void saveFilmShouldInsertFilmAndGenres() {
+        Film film = Film.builder()
+                .name("New Film")
+                .description("Desc")
+                .releaseDate(LocalDate.of(2020, 5, 5))
+                .duration(150L)
+                .mpaId(1L)
+                .genresIds(Set.of(1L, 2L))
                 .build();
 
-        HttpResponse<String> oldResponse = client.send(oldRequest, HttpResponse.BodyHandlers.ofString());
+        Film saved = filmRepository.saveFilm(film);
 
-        Long filmId = getId(oldResponse.body());
-
-        String newJsonBody = String.format("{\"id\":%d,\"name\":\"Человек-Паук 2\"," +
-                "\"description\":\"А может не прыгает и не стреляет!\",\"releaseDate\":\"2002-05-15\"," +
-                "\"duration\":130}", filmId);
-
-        HttpRequest updateRequest = HttpRequest.newBuilder()
-                .uri(URI.create("http://localhost:8080/films"))
-                .PUT(HttpRequest.BodyPublishers.ofString(newJsonBody))
-                .header("Content-Type", "application/json")
-                .build();
-
-        HttpResponse<String> updateResponse = client.send(updateRequest, HttpResponse.BodyHandlers.ofString());
-
-        Assertions.assertEquals(200, updateResponse.statusCode());
-
-        String responseBody = updateResponse.body();
-        Assertions.assertTrue(responseBody.contains("\"name\":\"Человек-Паук 2\""));
-        Assertions.assertTrue(responseBody.contains("\"description\":\"А может не прыгает и не стреляет!\""));
-        Assertions.assertTrue(responseBody.contains("\"duration\":130"));
+        assertThat(saved.getId()).isNotNull();
+        assertThat(filmRepository.findById(saved.getId()).get().getGenresIds()).isNotEmpty();
     }
 
     @Test
-    @DisplayName("Вернёт 500 если при обновлении данных о фильме нужный id не найден")
-    void shouldReturn500IfFilmIdIsNotFound() throws IOException, InterruptedException {
-        String oldJsonBody = "{\"id\":1,\"name\":\"Человек-Паук\",\"description\":\"Прыгает по крышам," +
-                " стреляет паутиной\",\"releaseDate\":\"2004-05-15\",\"duration\":120}";
+    void updateFilmShouldChangeName() {
+        Long id = insertFilm("Old", "Desc", "2000-01-01", 120, 1);
+        Film film = filmRepository.findById(id).get();
 
-        HttpRequest oldRequest = HttpRequest.newBuilder()
-                .uri(URI.create("http://localhost:8080/films"))
-                .POST(HttpRequest.BodyPublishers.ofString(oldJsonBody))
-                .header("Content-Type", "application/json")
+        Film updated = Film.builder()
+                .id(film.getId())
+                .name("New Name")
+                .description(film.getDescription())
+                .releaseDate(film.getReleaseDate())
+                .duration(film.getDuration())
+                .mpaId(film.getMpaId())
+                .genresIds(film.getGenresIds())
                 .build();
 
-        HttpResponse<String> oldResponse = client.send(oldRequest, HttpResponse.BodyHandlers.ofString());
+        filmRepository.updateFilm(updated);
 
-        Assertions.assertEquals(200, oldResponse.statusCode());
-
-        String newJsonBody = "{\"id\":999,\"name\":\"Чел-Пук\",\"description\":\"А может не прыгает и не стреляет!\"," +
-                "\"releaseDate\":\"2002-05-15\",\"duration\":130}";
-
-        HttpRequest updateRequest = HttpRequest.newBuilder()
-                .uri(URI.create("http://localhost:8080/films"))
-                .PUT(HttpRequest.BodyPublishers.ofString(newJsonBody))
-                .header("Content-Type", "application/json")
-                .build();
-
-        HttpResponse<String> updateResponse = client.send(updateRequest, HttpResponse.BodyHandlers.ofString());
-
-        Assertions.assertEquals(404, updateResponse.statusCode());
+        assertThat(filmRepository.findById(id).get().getName()).isEqualTo("New Name");
     }
 
     @Test
-    @DisplayName("Вернёт 400 если при обновлении данных о фильме ввели некорректные значения")
-    void shouldReturn400IfFilmUpdateInfoIsInvalid() throws IOException, InterruptedException {
-        String oldJsonBody = "{\"id\":1,\"name\":\"Человек-Паук\",\"description\":\"Прыгает по крышам," +
-                " стреляет паутиной\",\"releaseDate\":\"2004-05-15\",\"duration\":120}";
+    void likeLifecycleShouldWork() {
+        Long filmId = insertFilm("Film", "Desc", "2000-01-01", 120, 1);
 
-        HttpRequest oldRequest = HttpRequest.newBuilder()
-                .uri(URI.create("http://localhost:8080/films"))
-                .POST(HttpRequest.BodyPublishers.ofString(oldJsonBody))
-                .header("Content-Type", "application/json")
-                .build();
+        jdbc.update("INSERT INTO Users (email, login, name, birthday) VALUES (?, ?, ?, ?)",
+                "u@example.com", "login", "User", java.sql.Date.valueOf("1990-01-01"));
+        Long userId = jdbc.queryForObject("SELECT id FROM Users WHERE email = ?", Long.class,
+                "u@example.com");
 
-        HttpResponse<String> oldResponse = client.send(oldRequest, HttpResponse.BodyHandlers.ofString());
+        filmRepository.addLike(filmId, userId);
 
-        Long filmId = getId(oldResponse.body());
+        assertThat(filmRepository.getPopularFilms(10L)).isNotEmpty();
 
-        String wrongDescription = "s".repeat(201);
-        String newJsonBody = String.format("{\"id\":%d,\"name\":\"\",\"description\":\"%s\"," +
-                "\"releaseDate\":\"1894-05-15\",\"duration\":-8}", filmId, wrongDescription);
-
-        HttpRequest updateRequest = HttpRequest.newBuilder()
-                .uri(URI.create("http://localhost:8080/films"))
-                .PUT(HttpRequest.BodyPublishers.ofString(newJsonBody))
-                .header("Content-Type", "application/json")
-                .build();
-
-        HttpResponse<String> updateResponse = client.send(updateRequest, HttpResponse.BodyHandlers.ofString());
-
-        Assertions.assertEquals(400, updateResponse.statusCode());
+        filmRepository.removeLike(filmId, userId);
     }
 
-    //вспомогательный метод для тестов
-    public Long getId(String json) {
-        int idIndex = json.indexOf("\"id\":");
-        int valueStart = idIndex + 5; // Длина строки "\"id\":"
-        int valueEnd = json.indexOf(",", valueStart);
+    @Test
+    void getPopularFilmsShouldReturnSortedByLikes() {
+        Long film1 = insertFilm("Film2", "D", "2001-01-01", 110, 1);
 
-        if (valueEnd == -1) {
-            valueEnd = json.indexOf("}", valueStart);
-        }
+        jdbc.update(
+                "INSERT INTO Users (email, login, name, birthday) VALUES (?, ?, ?, ?)",
+                "user@example.com", "userLogin", "Test User", java.sql.Date.valueOf("1990-01-01")
+        );
+        Long userId = jdbc.queryForObject(
+                "SELECT id FROM Users WHERE email = ?", Long.class, "user@example.com"
+        );
 
-        String value = json.substring(valueStart, valueEnd).trim();
+        filmRepository.addLike(film1, userId);
 
-        return Long.parseLong(value);
+        List<Film> popular = filmRepository.getPopularFilms(10L);
+        assertThat(popular).isNotEmpty();
+        assertThat(popular.getFirst().getId()).isEqualTo(film1);
     }
 }

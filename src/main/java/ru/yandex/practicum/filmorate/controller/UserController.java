@@ -3,6 +3,10 @@ package ru.yandex.practicum.filmorate.controller;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+import ru.yandex.practicum.filmorate.dal.mappers.UserMapper;
+import ru.yandex.practicum.filmorate.dto.user.NewUserRequest;
+import ru.yandex.practicum.filmorate.dto.user.UpdateUserRequest;
+import ru.yandex.practicum.filmorate.dto.user.UserResponse;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.services.UserService;
 
@@ -20,17 +24,17 @@ public class UserController {
 
     @GetMapping
     public Collection<User> getAll() {
-        return userService.getAll();
+        return userService.getAllUsers();
     }
 
     @PostMapping
-    public User createUser(@Valid @RequestBody User user) {
-        return userService.createUser(user);
+    public UserResponse createUser(@Valid @RequestBody NewUserRequest request) {
+        return UserMapper.toResponse(userService.addNewUser(request));
     }
 
-    @PutMapping
-    public User updateUserInfo(@Valid @RequestBody User newUser) {
-        return userService.updateUserInfo(newUser);
+    @PutMapping()
+    public UserResponse updateUser(@Valid @RequestBody UpdateUserRequest request) {
+        return UserMapper.toResponse(userService.updateUser(request.getId(), request));
     }
 
     @PutMapping("/{id}/friends/{friendId}")
@@ -40,7 +44,7 @@ public class UserController {
 
     @DeleteMapping("/{id}/friends/{friendId}")
     public void deleteFromFriends(@PathVariable("id") Long userId, @PathVariable("friendId") Long friendId) {
-        userService.deleteFromFriends(userId, friendId);
+        userService.removeFriend(userId, friendId);
     }
 
     @GetMapping("/{id}/friends")
