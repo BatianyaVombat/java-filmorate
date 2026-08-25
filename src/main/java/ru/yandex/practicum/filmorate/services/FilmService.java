@@ -152,4 +152,13 @@ public class FilmService {
 
         return FilmMapper.toResponse(film, mpa, genres);
     }
+
+    public List<FilmResponse> getCommonFilms(Long userId, Long friendId) {
+        userService.getUserById(userId);
+        userService.getUserById(friendId);
+
+        return filmRepository.getCommonFilms(userId, friendId).stream()
+                .map(this::toFilmResponse)
+                .collect(Collectors.toList());
+    }
 }
