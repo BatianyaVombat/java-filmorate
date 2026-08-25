@@ -134,6 +134,49 @@ public class FilmRepository extends BaseRepository<Film> {
                         LIMIT ?
                 """;
         List<Map<String, Object>> rows = jdbc.queryForList(sqlPopular, count);
+
+        return mapRowsToFilms(rows);
+    }
+
+    //вспомогательный метод для апдейта жанров
+    private void updateGenres(Long filmId, Set<Long> genres) {
+        if (genres == null) {
+            genres = new HashSet<>();
+        }
+
+        String sqlDel = """
+                    DELETE FROM Film_Genres
+                    WHERE film_id = ?
+                """;
+        execute(sqlDel, filmId);
+
+        genres.forEach(genreId -> {
+            String sqlInsert = """
+                            INSERT INTO Film_Genres (film_id, genre_id)
+                            VALUES (?, ?)
+                    """;
+            execute(sqlInsert, filmId, genreId);
+        });
+    }
+
+    public List<Film> getCommonFilms(Long userId, Long friendId) {
+        String sqlCommon = """
+                SELECT f.id, COUNT(fl_all.user_id) AS like_count
+                                    FROM Films f
+                                    JOIN Film_Likes fl_user ON f.id = fl_user.film_id AND fl_user.user_id = ?
+                                    JOIN Film_Likes fl_friend ON f.id = fl_friend.film_id AND fl_friend.user_id = ?
+                                    LEFT JOIN Film_Likes fl_all ON f.id = fl_all.film_id
+                                    GROUP BY f.id
+                                    ORDER BY like_count DESC
+                """;
+        List<Map<String, Object>> rows = jdbc.queryForList(sqlCommon, userId, friendId);
+
+        return mapRowsToFilms(rows);
+    }
+
+    //Вынес общий метод, который считает лайки по всем фильмам
+    //Один метод подходит к 2-ум методам (getCommonFilms и getPopularFilms)
+    private List<Film> mapRowsToFilms(List<Map<String, Object>> rows) {
         List<Film> finalList = new ArrayList<>();
 
         rows.forEach(row -> {
@@ -161,26 +204,5 @@ public class FilmRepository extends BaseRepository<Film> {
         });
 
         return finalList;
-    }
-
-    //вспомогательный метод для апдейта жанров
-    private void updateGenres(Long filmId, Set<Long> genres) {
-        if (genres == null) {
-            genres = new HashSet<>();
-        }
-
-        String sqlDel = """
-                    DELETE FROM Film_Genres
-                    WHERE film_id = ?
-                """;
-        execute(sqlDel, filmId);
-
-        genres.forEach(genreId -> {
-            String sqlInsert = """
-                            INSERT INTO Film_Genres (film_id, genre_id)
-                            VALUES (?, ?)
-                    """;
-            execute(sqlInsert, filmId, genreId);
-        });
     }
 }
