@@ -58,8 +58,7 @@ public class ReviewService {
                 .orElseThrow(() -> new NotFoundException("Отзыв с id = " + id + " не найден."));
         review.setUseful(review.getUseful() + 1);
         reviewRepository.updateReview(review);
-        return ReviewMapper.toResponse(reviewRepository.getReview(id)
-                .orElseThrow(() -> new NotFoundException("Отзыв с id = " + id + " не найден.")));
+        return ReviewMapper.toResponse(review);
     }
 
     public ReviewResponse removeLike(Long id, Long userId) {
@@ -68,7 +67,6 @@ public class ReviewService {
                 .orElseThrow(() -> new NotFoundException("Отзыв с id = " + id + " не найден."));
         review.setUseful(review.getUseful() - 1);
         reviewRepository.updateReview(review);
-        return ReviewMapper.toResponse(reviewRepository.getReview(id)
-                .orElseThrow(() -> new NotFoundException("Отзыв с id = " + id + " не найден.")));
+        return ReviewMapper.toResponse(review);
     }
 }
