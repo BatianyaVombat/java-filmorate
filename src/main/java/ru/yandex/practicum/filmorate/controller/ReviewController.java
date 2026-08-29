@@ -50,7 +50,9 @@ public class ReviewController {
     }
 
     @PutMapping("/{id}/dislike/{userId}")
-    public ReviewResponse addDislike(@PathVariable("id") Long id, @PathVariable("userId") Long userId) {
+    public ReviewResponse addDislike(@Valid @RequestBody UpdateReviewRequest request,
+                                     @PathVariable("id") Long id, @PathVariable("userId") Long userId) {
+        reviewService.updateReview(request);
         return reviewService.addDislike(id, userId);
     }
 
