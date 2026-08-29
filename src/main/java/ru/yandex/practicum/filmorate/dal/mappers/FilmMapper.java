@@ -1,6 +1,7 @@
 package ru.yandex.practicum.filmorate.dal.mappers;
 
 import lombok.experimental.UtilityClass;
+import ru.yandex.practicum.filmorate.dto.directors.DirectorResponse;
 import ru.yandex.practicum.filmorate.dto.film.FilmResponse;
 import ru.yandex.practicum.filmorate.dto.film.NewFilmRequest;
 import ru.yandex.practicum.filmorate.dto.genres.GenreIdRequest;
@@ -23,6 +24,10 @@ public class FilmMapper {
                 .collect(Collectors.toSet())
                 : new HashSet<>();
 
+        Long directorId = (request.getDirectors() != null && !request.getDirectors().isEmpty())
+                ? request.getDirectors().getFirst().getId()
+                : null;
+
         return Film.builder()
                 .name(request.getName())
                 .description(request.getDescription())
@@ -30,10 +35,11 @@ public class FilmMapper {
                 .duration(request.getDuration())
                 .mpaId(request.getMpa().getId())
                 .genresIds(genreIds)
+                .directorId(directorId)
                 .build();
     }
 
-    public FilmResponse toResponse(Film film, MpaResponse mpa, List<GenreResponse> genres) {
+    public FilmResponse toResponse(Film film, MpaResponse mpa, List<GenreResponse> genres, List<DirectorResponse> directors) {
         return FilmResponse.builder()
                 .id(film.getId())
                 .name(film.getName())
@@ -43,6 +49,7 @@ public class FilmMapper {
                 .likeCount(film.getLikeCount())
                 .mpa(mpa)
                 .genres(genres)
+                .directors(directors)
                 .build();
     }
 }

@@ -4,6 +4,7 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import ru.yandex.practicum.filmorate.dto.directors.DirectorIdRequest;
 import ru.yandex.practicum.filmorate.dto.genres.GenreIdRequest;
 import ru.yandex.practicum.filmorate.dto.mpa.MpaIdRequest;
 
@@ -22,4 +23,5 @@ public class UpdateFilmRequest {
     private Long duration;
     private List<GenreIdRequest> genres;
     private MpaIdRequest mpa;
+    private List<DirectorIdRequest> directors;
 }

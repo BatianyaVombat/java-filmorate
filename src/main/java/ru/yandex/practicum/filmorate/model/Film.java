@@ -24,4 +24,5 @@ public class Film {
     @Builder.Default //сохраняет значение по умолчанию
     private Set<Long> genresIds = new HashSet<>(); //жанры
     private Long mpaId; //рейтинг МРА
+    private Long directorId;
 }
