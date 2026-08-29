@@ -245,6 +245,21 @@ public class FilmRepository extends BaseRepository<Film> {
         });
     }
 
+    //метод, который возвращает все лайки
+    public Map<Long, Set<Long>> getAllUserLikes() {
+        String sql = "SELECT user_id, film_id FROM Film_Likes";
+        List<Map<String, Object>> rows = jdbc.queryForList(sql);
+
+        Map<Long, Set<Long>> likesByUser = new HashMap<>();
+        rows.forEach(row -> {
+            Long userId = ((Number) row.get("user_id")).longValue();
+            Long filmId = ((Number) row.get("film_id")).longValue();
+            likesByUser.computeIfAbsent(userId, k -> new HashSet<>()).add(filmId);
+        });
+
+        return likesByUser;
+    }
+    
     //вспомогательный метод для пересборки фильма с жанрами
     private Film rebuildWithLikeCount(Film film, Long likeCount) {
         return Film.builder()
