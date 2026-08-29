@@ -9,6 +9,7 @@ import ru.yandex.practicum.filmorate.dto.film.UpdateFilmRequest;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.services.FilmService;
 
+import java.util.Collection;
 import java.util.List;
 
 @RestController
@@ -54,6 +55,11 @@ public class FilmController {
     @GetMapping("/popular")
     public List<Film> getPopularFilmList(@RequestParam(defaultValue = "10") Long count) {
         return filmService.getPopularFilmList(count);
+    }
+
+    @GetMapping("/common")
+    public Collection<FilmResponse> getCommonFilms(@RequestParam Long userId, @RequestParam Long friendId) {
+        return filmService.getCommonFilms(userId, friendId);
     }
 
     @GetMapping("/director/{directorId}")

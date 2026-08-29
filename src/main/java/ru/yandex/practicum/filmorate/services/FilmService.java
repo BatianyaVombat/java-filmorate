@@ -23,8 +23,10 @@ import ru.yandex.practicum.filmorate.model.Director;
 import ru.yandex.practicum.filmorate.model.Film;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.ArrayList;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -180,5 +182,45 @@ public class FilmService {
     public FilmResponse getFilmById(Long id) {
         Film film = getFilmOrThrow(id);
         return toFilmResponse(film);
+    }
+
+    public List<FilmResponse> getCommonFilms(Long userId, Long friendId) {
+        userService.getUserById(userId);
+        userService.getUserById(friendId);
+
+        return filmRepository.getCommonFilms(userId, friendId).stream()
+                .map(this::toFilmResponse)
+                .collect(Collectors.toList());
+    }
+
+    public List<FilmResponse> getRecommendations(Long userId) {
+        userService.getUserById(userId);
+
+        Map<Long, Set<Long>> allLikes = filmRepository.getAllUserLikes();
+        Set<Long> targetLikes = allLikes.getOrDefault(userId, Set.of());
+
+        Long bestUserId = null;
+        int bestIntersection = 0;
+
+        for (Map.Entry<Long, Set<Long>> entry : allLikes.entrySet()) {
+            if (entry.getKey().equals(userId)) continue;
+            Set<Long> intersection = new HashSet<>(entry.getValue());
+            intersection.retainAll(targetLikes);
+            if (intersection.size() > bestIntersection) {
+                bestIntersection = intersection.size();
+                bestUserId = entry.getKey();
+            }
+        }
+
+        if (bestUserId == null) {
+            return List.of(); // ни у кого нет пересечений — рекомендаций нет, это не ошибка
+        }
+
+        Set<Long> recommendedIds = new HashSet<>(allLikes.get(bestUserId));
+        recommendedIds.removeAll(targetLikes);
+
+        return recommendedIds.stream()
+                .map(this::getFilmById)
+                .collect(Collectors.toList());
     }
 }
