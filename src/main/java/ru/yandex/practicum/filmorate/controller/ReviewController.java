@@ -45,14 +45,16 @@ public class ReviewController {
     }
 
     @PutMapping("/{id}/like/{userId}")
-    public ReviewResponse addLike(@PathVariable("id") Long id, @PathVariable("userId") Long userId) {
+    public ReviewResponse addLike(@RequestBody(required = false) UpdateReviewRequest request,
+                                  @PathVariable("id") Long id, @PathVariable("userId") Long userId) {
+        if (request != null) reviewService.updateReview(request);
         return reviewService.addLike(id, userId);
     }
 
     @PutMapping("/{id}/dislike/{userId}")
-    public ReviewResponse addDislike(@Valid @RequestBody UpdateReviewRequest request,
+    public ReviewResponse addDislike(@RequestBody(required = false) UpdateReviewRequest request,
                                      @PathVariable("id") Long id, @PathVariable("userId") Long userId) {
-        reviewService.updateReview(request);
+        if (request != null) reviewService.updateReview(request);
         return reviewService.addDislike(id, userId);
     }
 
