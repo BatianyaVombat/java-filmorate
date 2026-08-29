@@ -137,6 +137,28 @@ public class FilmRepository extends BaseRepository<Film> {
                         LIMIT ?
                 """;
         List<Map<String, Object>> rows = jdbc.queryForList(sqlPopular, count);
+
+        return mapRowsToFilms(rows);
+    }
+
+    public List<Film> getCommonFilms(Long userId, Long friendId) {
+        String sqlCommon = """
+                SELECT f.id, COUNT(fl_all.user_id) AS like_count
+                                    FROM Films f
+                                    JOIN Film_Likes fl_user ON f.id = fl_user.film_id AND fl_user.user_id = ?
+                                    JOIN Film_Likes fl_friend ON f.id = fl_friend.film_id AND fl_friend.user_id = ?
+                                    LEFT JOIN Film_Likes fl_all ON f.id = fl_all.film_id
+                                    GROUP BY f.id
+                                    ORDER BY like_count DESC
+                """;
+        List<Map<String, Object>> rows = jdbc.queryForList(sqlCommon, userId, friendId);
+
+        return mapRowsToFilms(rows);
+    }
+
+    //Вынес общий метод, который считает лайки по всем фильмам
+    //Один метод подходит к 2-ум методам (getCommonFilms и getPopularFilms)
+    private List<Film> mapRowsToFilms(List<Map<String, Object>> rows) {
         List<Film> finalList = new ArrayList<>();
 
         rows.forEach(row -> {
