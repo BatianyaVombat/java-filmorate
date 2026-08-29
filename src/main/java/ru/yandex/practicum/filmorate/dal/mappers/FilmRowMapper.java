@@ -19,6 +19,7 @@ public class FilmRowMapper implements RowMapper<Film> {
                 .releaseDate(resultSet.getObject("releaseDate", LocalDate.class))
                 .duration(resultSet.getLong("duration"))
                 .mpaId(resultSet.getLong("rating_id"))
+                .directorId(resultSet.getObject("director_id", Long.class))
                 .build();
     }
 }

@@ -39,6 +39,7 @@ public class FilmRepository extends BaseRepository<Film> {
                     .duration(oldFilm.getDuration())
                     .genresIds(new HashSet<>(genresIds))
                     .mpaId(oldFilm.getMpaId())
+                    .directorId(oldFilm.getDirectorId())
                     .build();
 
             films.add(reassFilm);
@@ -71,6 +72,7 @@ public class FilmRepository extends BaseRepository<Film> {
                 .duration(film.getDuration())
                 .genresIds(new HashSet<>(genresIds))
                 .mpaId(film.getMpaId())
+                .directorId(film.getDirectorId())
                 .build();
 
         return Optional.of(foundFilm);
@@ -78,11 +80,11 @@ public class FilmRepository extends BaseRepository<Film> {
 
     public Film saveFilm(Film film) {
         String sqlFilm = """
-                       INSERT INTO Films (name, description, releaseDate, duration, rating_id)
-                       VALUES (?, ?, ?, ?, ?)
+                       INSERT INTO Films (name, description, releaseDate, duration, rating_id, director_id)
+                       VALUES (?, ?, ?, ?, ?, ?)
                 """;
         jdbc.update(sqlFilm, film.getName(), film.getDescription(), film.getReleaseDate(),
-                film.getDuration(), film.getMpaId());
+                film.getDuration(), film.getMpaId(), film.getDirectorId());
 
         Long newId = jdbc.queryForObject("SELECT MAX(id) FROM Films", Long.class);
 
@@ -99,11 +101,12 @@ public class FilmRepository extends BaseRepository<Film> {
 
     public void updateFilm(Film film) {
         String sqlUpd = """
-                    UPDATE Films SET name = ?, description = ?, releaseDate = ?, duration = ?, rating_id = ?
+                    UPDATE Films SET name = ?, description = ?, releaseDate = ?,
+                    duration = ?, rating_id = ?, director_id = ?
                     WHERE id = ?
                 """;
         update(sqlUpd, film.getName(), film.getDescription(), film.getReleaseDate(), film.getDuration(),
-                film.getMpaId(), film.getId());
+                film.getMpaId(), film.getDirectorId(), film.getId());
 
         updateGenres(film.getId(), film.getGenresIds());
     }
@@ -146,21 +149,57 @@ public class FilmRepository extends BaseRepository<Film> {
             Film fullFilm = findById(filmId).orElseThrow(
                     () -> new InternalException("Фильм не найден"));
 
-            Film filmWithLike = Film.builder()
-                    .id(fullFilm.getId())
-                    .name(fullFilm.getName())
-                    .description(fullFilm.getDescription())
-                    .releaseDate(fullFilm.getReleaseDate())
-                    .duration(fullFilm.getDuration())
-                    .mpaId(fullFilm.getMpaId())
-                    .genresIds(fullFilm.getGenresIds())
-                    .likeCount(likeCount)
-                    .build();
-
+            Film filmWithLike = rebuildWithLikeCount(fullFilm, likeCount);
             finalList.add(filmWithLike);
         });
 
         return finalList;
+    }
+
+    public List<Film> getFilmsByDirectorSorted(String sortBy, Long directorId) {
+        List<Film> rawList;
+
+        if (sortBy.equals("year")) {
+            String sqlYearSort = """
+                              SELECT *
+                              FROM Films
+                              WHERE director_id = ?
+                              ORDER BY releaseDate ASC
+                    """;
+
+            rawList = findMany(sqlYearSort, directorId);
+            return rawList;
+        } else if (sortBy.equals("likes")) {
+            String sqlLikeCount = """
+                            SELECT f.id, COUNT(fl.user_id) AS like_count
+                            FROM Films f
+                            LEFT JOIN Film_Likes fl ON f.id = fl.film_id
+                            WHERE f.director_id = ?
+                            GROUP BY f.id
+                            ORDER BY like_count DESC
+                    """;
+
+            List<Map<String, Object>> rows = jdbc.queryForList(sqlLikeCount, directorId);
+            List<Film> finalList = new ArrayList<>();
+
+            rows.forEach(row -> {
+                Number idNumber = (Number) row.get("id");
+                Long filmId = idNumber.longValue();
+
+                Number likeNumber = (Number) row.get("like_count");
+                Long likeCount = likeNumber.longValue();
+
+                Film fullFilm = findById(filmId).orElseThrow(
+                        () -> new InternalException("Фильм не найден"));
+
+                Film filmWithLike = rebuildWithLikeCount(fullFilm, likeCount);
+                finalList.add(filmWithLike);
+            });
+
+            return finalList;
+        } else {
+            return new ArrayList<>();
+        }
     }
 
     //вспомогательный метод для апдейта жанров
@@ -182,5 +221,20 @@ public class FilmRepository extends BaseRepository<Film> {
                     """;
             execute(sqlInsert, filmId, genreId);
         });
+    }
+
+    //вспомогательный метод для пересборки фильма с жанрами
+    private Film rebuildWithLikeCount(Film film, Long likeCount) {
+        return Film.builder()
+                .id(film.getId())
+                .name(film.getName())
+                .description(film.getDescription())
+                .releaseDate(film.getReleaseDate())
+                .duration(film.getDuration())
+                .mpaId(film.getMpaId())
+                .genresIds(film.getGenresIds())
+                .directorId(film.getDirectorId())
+                .likeCount(likeCount)
+                .build();
     }
 }

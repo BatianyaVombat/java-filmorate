@@ -42,7 +42,7 @@ CREATE TABLE IF NOT EXISTS Films
     releaseDate DATE,
     duration    BIGINT       NOT NULL,
     rating_id   BIGINT       NOT NULL REFERENCES MPA_Ratings (id),
-    director_id BIGINT       NOT NULL REFERENCES Directors(id)
+    director_id BIGINT       REFERENCES Directors(id)
 );
 
 CREATE TABLE IF NOT EXISTS Reviews (

@@ -5,10 +5,13 @@ import org.apache.logging.log4j.util.InternalException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
+import ru.yandex.practicum.filmorate.dal.DirectorRepository;
 import ru.yandex.practicum.filmorate.dal.FilmRepository;
 import ru.yandex.practicum.filmorate.dal.GenreRepository;
 import ru.yandex.practicum.filmorate.dal.MpaRepository;
+import ru.yandex.practicum.filmorate.dal.mappers.DirectorMapper;
 import ru.yandex.practicum.filmorate.dal.mappers.FilmMapper;
+import ru.yandex.practicum.filmorate.dto.directors.DirectorResponse;
 import ru.yandex.practicum.filmorate.dto.film.FilmResponse;
 import ru.yandex.practicum.filmorate.dto.film.NewFilmRequest;
 import ru.yandex.practicum.filmorate.dto.film.UpdateFilmRequest;
@@ -16,10 +19,13 @@ import ru.yandex.practicum.filmorate.dto.genres.GenreIdRequest;
 import ru.yandex.practicum.filmorate.dto.genres.GenreResponse;
 import ru.yandex.practicum.filmorate.dto.mpa.MpaResponse;
 import ru.yandex.practicum.filmorate.exeptions.NotFoundException;
+import ru.yandex.practicum.filmorate.model.Director;
 import ru.yandex.practicum.filmorate.model.Film;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -28,14 +34,17 @@ public class FilmService {
     private final FilmRepository filmRepository;
     private final MpaRepository mpaRepository;
     private final GenreRepository genreRepository;
+    private final DirectorRepository directorRepository;
     private final UserService userService;
 
     @Autowired
     public FilmService(FilmRepository filmRepository, MpaRepository mpaRepository,
-                       GenreRepository genreRepository, UserService userService) {
+                       GenreRepository genreRepository, DirectorRepository directorRepository,
+                       UserService userService) {
         this.filmRepository = filmRepository;
         this.mpaRepository = mpaRepository;
         this.genreRepository = genreRepository;
+        this.directorRepository = directorRepository;
         this.userService = userService;
     }
 
@@ -83,6 +92,9 @@ public class FilmService {
                 ? request.getDuration() : oldFilm.getDuration();
         Long finalMpaId = request.getMpa() != null
                 ? request.getMpa().getId() : oldFilm.getMpaId();
+        Long finalDirector = request.getDirectors() != null
+                ? request.getDirectors().getFirst().getId()
+                : oldFilm.getDirectorId();
 
         Set<Long> finalGenreIds = request.getGenres() != null
                 ? request.getGenres().stream()
@@ -97,6 +109,7 @@ public class FilmService {
                 .duration(finalDuration)
                 .mpaId(finalMpaId)
                 .genresIds(finalGenreIds)
+                .directorId(finalDirector)
                 .build();
 
         filmRepository.updateFilm(updatedFilm);
@@ -129,12 +142,34 @@ public class FilmService {
         return filmRepository.getPopularFilms(count);
     }
 
+    public List<FilmResponse> getSortedFilms(String sortBy, Long directorId) {
+        directorRepository.findById(directorId)
+                .orElseThrow(() -> new NotFoundException("Режиссёр с id = " + directorId + " не найден"));
+
+        List<Film> films = filmRepository.getFilmsByDirectorSorted(sortBy, directorId);
+
+        return films.stream()
+                .map(this::toFilmResponse)
+                .collect(Collectors.toList());
+    }
+
     private FilmResponse toFilmResponse(Film film) {
         MpaResponse mpa = mpaRepository.findById(film.getMpaId())
                 .orElseThrow(() -> new NotFoundException("Рейтинг не найден"));
+
         List<GenreResponse> genres = genreRepository.findAllById(film.getGenresIds());
 
-        return FilmMapper.toResponse(film, mpa, genres);
+        List<DirectorResponse> directors = new ArrayList<>();
+        if (film.getDirectorId() != null) {
+            Optional<Director> director = directorRepository.findById(film.getDirectorId());
+
+            if (director.isPresent()) {
+                DirectorResponse dr = DirectorMapper.toResponse(director.get());
+                directors.add(dr);
+            }
+        }
+
+        return FilmMapper.toResponse(film, mpa, genres, directors);
     }
 
     private Film getFilmOrThrow(Long filmId) {
@@ -144,12 +179,6 @@ public class FilmService {
 
     public FilmResponse getFilmById(Long id) {
         Film film = getFilmOrThrow(id);
-
-        MpaResponse mpa = mpaRepository.findById(film.getMpaId())
-                .orElseThrow(() -> new NotFoundException("Рейтинг с id = " + film.getMpaId() + " не найден"));
-
-        List<GenreResponse> genres = genreRepository.findAllById(film.getGenresIds());
-
-        return FilmMapper.toResponse(film, mpa, genres);
+        return toFilmResponse(film);
     }
 }
