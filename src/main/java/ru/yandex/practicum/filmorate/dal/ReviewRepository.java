@@ -1,6 +1,5 @@
 package ru.yandex.practicum.filmorate.dal;
 
-import com.sun.jdi.InternalException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Repository;
@@ -22,8 +21,13 @@ public class ReviewRepository extends BaseRepository<Review> {
             "WHERE film_id = ? ORDER BY useful DESC LIMIT ?";
     private static final String INSERT_LIKE_QUERY = "INSERT INTO Review_Likes (review_id, user_id) VALUES (?, ?)";
     private static final String INSERT_DISLIKE_QUERY = "INSERT INTO Review_Dislikes (review_id, user_id) VALUES (?, ?)";
-    private static final String DELETE_LIKE_QUERY = "DELETE FROM Review_Likes WHERE review_id = ? AND user_id";
-    private static final String DELETE_DISLIKE_QUERY = "DELETE FROM Review_Dislikes WHERE review_id = ? AND user_id";
+    private static final String DELETE_LIKE_QUERY = "DELETE FROM Review_Likes WHERE review_id = ? AND user_id = ?";
+    private static final String DELETE_LIKES_BY_REVIEW_ID_QUERY = "DELETE FROM Review_Likes WHERE review_id = ?";
+    private static final String DELETE_DISLIKE_QUERY = "DELETE FROM Review_Dislikes " +
+            "WHERE review_id = ? AND user_id = ?";
+    private static final String DELETE_DISLIKES_BY_REVIEW_ID_QUERY = "DELETE FROM Review_Dislikes WHERE review_id = ?";
+    private static final String LIKE_INCREMENT = "UPDATE Reviews SET useful = useful + 1 WHERE id = ?";
+    private static final String DISLIKE_DECREMENT = "UPDATE Reviews SET useful = useful - 1 WHERE id = ?";
 
     public ReviewRepository(JdbcTemplate jdbc, RowMapper<Review> mapper) {
         super(jdbc, mapper);
@@ -54,6 +58,8 @@ public class ReviewRepository extends BaseRepository<Review> {
     }
 
     public void removeReview(Long id) {
+        delete(DELETE_LIKES_BY_REVIEW_ID_QUERY, id);
+        delete(DELETE_DISLIKES_BY_REVIEW_ID_QUERY, id);
         delete(DELETE_REVIEW_BY_ID_QUERY, id);
     }
 
@@ -70,25 +76,22 @@ public class ReviewRepository extends BaseRepository<Review> {
     }
 
     public void saveLike(Long id, Long userId) {
-        int rowsUpdate = jdbc.update(INSERT_LIKE_QUERY, id, userId);
-        if (rowsUpdate == 0) {
-            throw new InternalException("Не удалось сохранить данные.");
-        }
+        update(INSERT_LIKE_QUERY, id, userId);
+        update(LIKE_INCREMENT, id);
     }
 
     public void saveDislike(Long id, Long userId) {
-        int rowsUpdate = jdbc.update(INSERT_DISLIKE_QUERY, id, userId);
-        if (rowsUpdate == 0) {
-            throw new InternalException("Не удалось сохранить данные.");
-        }
+        update(INSERT_DISLIKE_QUERY, id, userId);
+        update(DISLIKE_DECREMENT, id);
     }
 
     public void deleteLike(Long id, Long userId) {
         delete(DELETE_LIKE_QUERY, id, userId);
+        update(DISLIKE_DECREMENT, id);
     }
 
     public void deleteDislike(Long id, Long userId) {
         delete(DELETE_DISLIKE_QUERY, id, userId);
-
+        update(LIKE_INCREMENT, id);
     }
 }
