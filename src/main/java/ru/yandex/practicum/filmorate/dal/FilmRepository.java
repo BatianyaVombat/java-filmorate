@@ -259,7 +259,7 @@ public class FilmRepository extends BaseRepository<Film> {
 
         return likesByUser;
     }
-    
+
     //вспомогательный метод для пересборки фильма с жанрами
     private Film rebuildWithLikeCount(Film film, Long likeCount) {
         return Film.builder()
