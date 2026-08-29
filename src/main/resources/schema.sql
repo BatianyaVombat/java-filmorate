@@ -54,6 +54,20 @@ CREATE TABLE IF NOT EXISTS Reviews (
     useful      BIGINT
 );
 
+CREATE TABLE IF NOT EXISTS Review_Likes
+(
+    review_id BIGINT NOT NULL REFERENCES Reviews (id),
+    user_id BIGINT NOT NULL REFERENCES Users (id),
+    PRIMARY KEY (review_id, user_id)
+);
+
+CREATE TABLE IF NOT EXISTS Review_Dislikes
+(
+    review_id BIGINT NOT NULL REFERENCES Reviews (id),
+    user_id BIGINT NOT NULL REFERENCES Users (id),
+    PRIMARY KEY (review_id, user_id)
+);
+
 --Связующие таблицы
 CREATE TABLE IF NOT EXISTS Friends
 (
