@@ -22,8 +22,9 @@ public class ReviewRepository extends BaseRepository<Review> {
             "WHERE film_id = ? ORDER BY useful DESC LIMIT ?";
     private static final String INSERT_LIKE_QUERY = "INSERT INTO Review_Likes (review_id, user_id) VALUES (?, ?)";
     private static final String INSERT_DISLIKE_QUERY = "INSERT INTO Review_Dislikes (review_id, user_id) VALUES (?, ?)";
-    private static final String DELETE_LIKE_QUERY = "DELETE FROM Review_Likes WHERE review_id = ? AND user_id";
-    private static final String DELETE_DISLIKE_QUERY = "DELETE FROM Review_Dislikes WHERE review_id = ? AND user_id";
+    private static final String DISLIKE_DECREMENT = "UPDATE Reviews SET useful = useful - 1 WHERE id = ?";
+    private static final String DELETE_LIKE_QUERY = "DELETE FROM Review_Likes WHERE review_id = ? AND user_id = ?";
+    private static final String DELETE_DISLIKE_QUERY = "DELETE FROM Review_Dislikes WHERE review_id = ? AND user_id = ?";
 
     public ReviewRepository(JdbcTemplate jdbc, RowMapper<Review> mapper) {
         super(jdbc, mapper);
@@ -81,6 +82,8 @@ public class ReviewRepository extends BaseRepository<Review> {
         if (rowsUpdate == 0) {
             throw new InternalException("Не удалось сохранить данные.");
         }
+
+        jdbc.update(DISLIKE_DECREMENT, id); //счётчик useful в таблице Reviews должен обновляться
     }
 
     public void deleteLike(Long id, Long userId) {
