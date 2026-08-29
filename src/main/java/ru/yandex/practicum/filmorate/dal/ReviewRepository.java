@@ -1,5 +1,6 @@
 package ru.yandex.practicum.filmorate.dal;
 
+import com.sun.jdi.InternalException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Repository;
@@ -19,6 +20,10 @@ public class ReviewRepository extends BaseRepository<Review> {
     private static final String FIND_REVIEWS_LIMIT_QUERY = "SELECT * FROM Reviews ORDER BY useful DESC LIMIT ?";
     private static final String FIND_REVIEWS_BY_FILMID_LIMIT_QUERY = "SELECT * FROM Reviews " +
             "WHERE film_id = ? ORDER BY useful DESC LIMIT ?";
+    private static final String INSERT_LIKE_QUERY = "INSERT INTO Review_Likes (review_id, user_id) VALUES (?, ?)";
+    private static final String INSERT_DISLIKE_QUERY = "INSERT INTO Review_Dislikes (review_id, user_id) VALUES (?, ?)";
+    private static final String DELETE_LIKE_QUERY = "DELETE FROM Review_Likes WHERE review_id = ? AND user_id";
+    private static final String DELETE_DISLIKE_QUERY = "DELETE FROM Review_Dislikes WHERE review_id = ? AND user_id";
 
     public ReviewRepository(JdbcTemplate jdbc, RowMapper<Review> mapper) {
         super(jdbc, mapper);
@@ -62,5 +67,28 @@ public class ReviewRepository extends BaseRepository<Review> {
 
     public Collection<Review> getReviewsByFilmId(Long filmId, Long count) {
         return findMany(FIND_REVIEWS_BY_FILMID_LIMIT_QUERY, filmId, count);
+    }
+
+    public void saveLike(Long id, Long userId) {
+        int rowsUpdate = jdbc.update(INSERT_LIKE_QUERY, id, userId);
+        if (rowsUpdate == 0) {
+            throw new InternalException("Не удалось сохранить данные.");
+        }
+    }
+
+    public void saveDislike(Long id, Long userId) {
+        int rowsUpdate = jdbc.update(INSERT_DISLIKE_QUERY, id, userId);
+        if (rowsUpdate == 0) {
+            throw new InternalException("Не удалось сохранить данные.");
+        }
+    }
+
+    public void deleteLike(Long id, Long userId) {
+        delete(DELETE_LIKE_QUERY, id, userId);
+    }
+
+    public void deleteDislike(Long id, Long userId) {
+        delete(DELETE_DISLIKE_QUERY, id, userId);
+
     }
 }

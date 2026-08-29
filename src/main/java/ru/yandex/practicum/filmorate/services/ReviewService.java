@@ -58,6 +58,17 @@ public class ReviewService {
                 .orElseThrow(() -> new NotFoundException("Отзыв с id = " + id + " не найден."));
         review.setUseful(review.getUseful() + 1);
         reviewRepository.updateReview(review);
+        reviewRepository.saveLike(id, userId);
+        return ReviewMapper.toResponse(review);
+    }
+
+    public ReviewResponse addDislike(Long id, Long userId) {
+        userService.getUserById(userId);
+        Review review = reviewRepository.getReview(id)
+                .orElseThrow(() -> new NotFoundException("Отзыв с id = " + id + " не найден."));
+        review.setUseful(review.getUseful() - 1);
+        reviewRepository.updateReview(review);
+        reviewRepository.saveDislike(id, userId);
         return ReviewMapper.toResponse(review);
     }
 
@@ -67,6 +78,17 @@ public class ReviewService {
                 .orElseThrow(() -> new NotFoundException("Отзыв с id = " + id + " не найден."));
         review.setUseful(review.getUseful() - 1);
         reviewRepository.updateReview(review);
+        reviewRepository.deleteLike(id, userId);
+        return ReviewMapper.toResponse(review);
+    }
+
+    public ReviewResponse removeDislike(Long id, Long userId) {
+        userService.getUserById(userId);
+        Review review = reviewRepository.getReview(id)
+                .orElseThrow(() -> new NotFoundException("Отзыв с id = " + id + " не найден."));
+        review.setUseful(review.getUseful() + 1);
+        reviewRepository.updateReview(review);
+        reviewRepository.deleteDislike(id, userId);
         return ReviewMapper.toResponse(review);
     }
 }
