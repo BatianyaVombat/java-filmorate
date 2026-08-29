@@ -1,14 +1,12 @@
 package ru.yandex.practicum.filmorate.dto.film;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Positive;
-import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import ru.yandex.practicum.filmorate.annotation.After;
+import ru.yandex.practicum.filmorate.dto.directors.DirectorIdRequest;
 import ru.yandex.practicum.filmorate.dto.genres.GenreIdRequest;
 import ru.yandex.practicum.filmorate.dto.mpa.MpaIdRequest;
 
@@ -42,4 +40,6 @@ public class NewFilmRequest {
 
     @NotNull
     private MpaIdRequest mpa;
+
+    private List<DirectorIdRequest> directors;
 }

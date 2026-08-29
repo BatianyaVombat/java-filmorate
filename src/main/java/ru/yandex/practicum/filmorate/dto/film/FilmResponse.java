@@ -3,6 +3,7 @@ package ru.yandex.practicum.filmorate.dto.film;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
+import ru.yandex.practicum.filmorate.dto.directors.DirectorResponse;
 import ru.yandex.practicum.filmorate.dto.genres.GenreResponse;
 import ru.yandex.practicum.filmorate.dto.mpa.MpaResponse;
 
@@ -21,4 +22,5 @@ public class FilmResponse {
     private Long likeCount;
     private List<GenreResponse> genres;
     private MpaResponse mpa;
+    private List<DirectorResponse> directors;
 }

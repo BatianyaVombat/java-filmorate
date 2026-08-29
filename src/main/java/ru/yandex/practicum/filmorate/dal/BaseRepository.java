@@ -5,11 +5,11 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
-
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
-import org.springframework.jdbc.core.namedparam.SqlParameterSource;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 
+import java.sql.PreparedStatement;
+import java.sql.Statement;
 import java.util.List;
 import java.util.Optional;
 
@@ -36,9 +36,20 @@ public class BaseRepository<T> {
         return rowsDelete > 0;
     }
 
-    protected Long insert(String query, SqlParameterSource params) {
+    protected Long insert(String query, Object... params) {
         GeneratedKeyHolder keyHolder = new GeneratedKeyHolder();
-        jdbc.update(query, params, keyHolder);
+
+        jdbc.update(connection -> {
+            PreparedStatement ps = connection.prepareStatement(
+                    query,
+                    Statement.RETURN_GENERATED_KEYS
+            );
+            for (int i = 0; i < params.length; i++) {
+                ps.setObject(i + 1, params[i]);
+            }
+            return ps;
+        }, keyHolder);
+
 
         Long id = keyHolder.getKeyAs(Long.class);
         if (id == null) {
