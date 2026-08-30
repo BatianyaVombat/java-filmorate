@@ -139,7 +139,7 @@ public class UserService {
         reviewService.removeReviewsByUserId(userId);
         reviewService.removeReviewLikesByUserId(userId);
         reviewService.removeReviewDislikesByUserId(userId);
-        userRepository.removeFriendsByUserId(userId);
+        userRepository.removeFriendsByUserId(userId, userId);
         filmRepository.removeLikesByUserId(userId);
         userRepository.removeUser(userId);
     }
