@@ -28,6 +28,9 @@ public class ReviewRepository extends BaseRepository<Review> {
     private static final String DELETE_DISLIKES_BY_REVIEW_ID_QUERY = "DELETE FROM Review_Dislikes WHERE review_id = ?";
     private static final String LIKE_INCREMENT = "UPDATE Reviews SET useful = useful + 1 WHERE id = ?";
     private static final String DISLIKE_DECREMENT = "UPDATE Reviews SET useful = useful - 1 WHERE id = ?";
+    private static final String DELETE_REVIEW_BY_USER_ID_QUERY = "DELETE FROM Reviews WHERE user_id = ?";
+    private static final String DELETE_LIKES_BY_USER_ID_QUERY = "DELETE FROM Review_Likes WHERE user_id = ?";
+    private static final String DELETE_DISLIKES_BY_USER_ID_QUERY = "DELETE FROM Review_Dislikes WHERE user_id = ?";
 
     public ReviewRepository(JdbcTemplate jdbc, RowMapper<Review> mapper) {
         super(jdbc, mapper);
@@ -93,5 +96,19 @@ public class ReviewRepository extends BaseRepository<Review> {
     public void deleteDislike(Long id, Long userId) {
         delete(DELETE_DISLIKE_QUERY, id, userId);
         update(LIKE_INCREMENT, id);
+    }
+
+    public void removeReviewsByUserId(Long userId) {
+        deleteLikesByUserId(userId);
+        deleteDislikesByUserId(userId);
+        delete(DELETE_REVIEW_BY_USER_ID_QUERY, userId);
+    }
+
+    public void deleteLikesByUserId(Long userId) {
+        delete(DELETE_LIKES_BY_USER_ID_QUERY, userId);
+    }
+
+    public void deleteDislikesByUserId(Long userId) {
+        delete(DELETE_DISLIKES_BY_USER_ID_QUERY, userId);
     }
 }

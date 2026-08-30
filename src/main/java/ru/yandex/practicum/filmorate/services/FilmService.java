@@ -23,12 +23,7 @@ import ru.yandex.practicum.filmorate.model.Director;
 import ru.yandex.practicum.filmorate.model.Film;
 
 import java.time.LocalDate;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.ArrayList;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -38,16 +33,18 @@ public class FilmService {
     private final GenreRepository genreRepository;
     private final DirectorRepository directorRepository;
     private final UserService userService;
+    private final ReviewService reviewService;
 
     @Autowired
     public FilmService(FilmRepository filmRepository, MpaRepository mpaRepository,
                        GenreRepository genreRepository, DirectorRepository directorRepository,
-                       UserService userService) {
+                       UserService userService, ReviewService reviewService) {
         this.filmRepository = filmRepository;
         this.mpaRepository = mpaRepository;
         this.genreRepository = genreRepository;
         this.directorRepository = directorRepository;
         this.userService = userService;
+        this.reviewService = reviewService;
     }
 
     public List<FilmResponse> getAllFilms() {
@@ -100,8 +97,8 @@ public class FilmService {
 
         Set<Long> finalGenreIds = request.getGenres() != null
                 ? request.getGenres().stream()
-                .map(GenreIdRequest::getId)
-                .collect(Collectors.toSet()) : oldFilm.getGenresIds();
+                  .map(GenreIdRequest::getId)
+                  .collect(Collectors.toSet()) : oldFilm.getGenresIds();
 
         Film updatedFilm = Film.builder()
                 .id(oldFilm.getId())
@@ -222,5 +219,13 @@ public class FilmService {
         return recommendedIds.stream()
                 .map(this::getFilmById)
                 .collect(Collectors.toList());
+    }
+
+    public void removeFilm(Long filmId) {
+        getFilmOrThrow(filmId);
+        reviewService.removeReviewByFilmId(filmId);
+        filmRepository.removeLikesByFilmId(filmId);
+        filmRepository.removeFilmGenresByFilmId(filmId);
+        filmRepository.removeFilm(filmId);
     }
 }

@@ -274,4 +274,36 @@ public class FilmRepository extends BaseRepository<Film> {
                 .likeCount(likeCount)
                 .build();
     }
+
+    public void removeLikesByUserId(Long userId) {
+        String sqlRemove = """
+                        DELETE FROM Film_Likes
+                        WHERE user_id = ?
+                """;
+        execute(sqlRemove, userId);
+    }
+
+    public void removeLikesByFilmId(Long filmId) {
+        String sqlRemove = """
+                        DELETE FROM Film_Likes
+                        WHERE film_id = ?
+                """;
+        execute(sqlRemove, filmId);
+    }
+
+    public void removeFilmGenresByFilmId(Long filmId) {
+        String sqlRemove = """
+                        DELETE FROM Film_Genres
+                        WHERE film_id = ?
+                """;
+        execute(sqlRemove, filmId);
+    }
+
+    public void removeFilm(Long filmId) {
+        String sqlRemove = """
+                        DELETE FROM Films
+                        WHERE film_id = ?
+                """;
+        delete(sqlRemove, filmId);
+    }
 }
