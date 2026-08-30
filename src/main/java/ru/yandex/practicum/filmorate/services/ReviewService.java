@@ -7,7 +7,6 @@ import ru.yandex.practicum.filmorate.dto.reviews.NewReviewRequest;
 import ru.yandex.practicum.filmorate.dto.reviews.ReviewResponse;
 import ru.yandex.practicum.filmorate.dto.reviews.UpdateReviewRequest;
 import ru.yandex.practicum.filmorate.exeptions.NotFoundException;
-import ru.yandex.practicum.filmorate.model.Review;
 
 import java.util.Collection;
 
@@ -54,41 +53,33 @@ public class ReviewService {
 
     public ReviewResponse addLike(Long id, Long userId) {
         userService.getUserById(userId);
-        Review review = reviewRepository.getReview(id)
+        reviewRepository.getReview(id)
                 .orElseThrow(() -> new NotFoundException("Отзыв с id = " + id + " не найден."));
-        review.setUseful(review.getUseful() + 1);
-        reviewRepository.updateReview(review);
         reviewRepository.saveLike(id, userId);
-        return ReviewMapper.toResponse(review);
+        return ReviewMapper.toResponse(reviewRepository.getReview(id).orElseThrow());
     }
 
     public ReviewResponse addDislike(Long id, Long userId) {
         userService.getUserById(userId);
-        Review review = reviewRepository.getReview(id)
+        reviewRepository.getReview(id)
                 .orElseThrow(() -> new NotFoundException("Отзыв с id = " + id + " не найден."));
-        review.setUseful(review.getUseful() - 1);
-        reviewRepository.updateReview(review);
         reviewRepository.saveDislike(id, userId);
-        return ReviewMapper.toResponse(review);
+        return ReviewMapper.toResponse(reviewRepository.getReview(id).orElseThrow());
     }
 
     public ReviewResponse removeLike(Long id, Long userId) {
         userService.getUserById(userId);
-        Review review = reviewRepository.getReview(id)
+        reviewRepository.getReview(id)
                 .orElseThrow(() -> new NotFoundException("Отзыв с id = " + id + " не найден."));
-        review.setUseful(review.getUseful() - 1);
-        reviewRepository.updateReview(review);
         reviewRepository.deleteLike(id, userId);
-        return ReviewMapper.toResponse(review);
+        return ReviewMapper.toResponse(reviewRepository.getReview(id).orElseThrow());
     }
 
     public ReviewResponse removeDislike(Long id, Long userId) {
         userService.getUserById(userId);
-        Review review = reviewRepository.getReview(id)
+        reviewRepository.getReview(id)
                 .orElseThrow(() -> new NotFoundException("Отзыв с id = " + id + " не найден."));
-        review.setUseful(review.getUseful() + 1);
-        reviewRepository.updateReview(review);
         reviewRepository.deleteDislike(id, userId);
-        return ReviewMapper.toResponse(review);
+        return ReviewMapper.toResponse(reviewRepository.getReview(id).orElseThrow());
     }
 }
