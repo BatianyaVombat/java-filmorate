@@ -302,7 +302,7 @@ public class FilmRepository extends BaseRepository<Film> {
     public void removeFilm(Long filmId) {
         String sqlRemove = """
                         DELETE FROM Films
-                        WHERE film_id = ?
+                        WHERE id = ?
                 """;
         delete(sqlRemove, filmId);
     }

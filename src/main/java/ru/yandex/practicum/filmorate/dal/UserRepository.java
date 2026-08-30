@@ -115,7 +115,7 @@ public class UserRepository extends BaseRepository<User> {
     public void removeUser(Long userId) {
         String sqlRemove = """
                         DELETE FROM Users
-                        WHERE user_id = ?
+                        WHERE id = ?
                 """;
 
         delete(sqlRemove, userId);
