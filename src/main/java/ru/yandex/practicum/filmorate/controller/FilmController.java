@@ -64,7 +64,12 @@ public class FilmController {
 
     @GetMapping("/director/{directorId}")
     public List<FilmResponse> sortedFilmList(@RequestParam(defaultValue = "year") String sortBy,
-                                           @PathVariable Long directorId) {
-        return filmService.getSortedFilms(sortBy,directorId);
+                                             @PathVariable Long directorId) {
+        return filmService.getSortedFilms(sortBy, directorId);
+    }
+
+    @DeleteMapping("/{id}")
+    public void deleteFilmById(@PathVariable("id") Long filmId) {
+        filmService.removeFilm(filmId);
     }
 }

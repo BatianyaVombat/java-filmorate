@@ -3,6 +3,7 @@ package ru.yandex.practicum.filmorate.services;
 import jakarta.validation.ValidationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import ru.yandex.practicum.filmorate.dal.FilmRepository;
 import ru.yandex.practicum.filmorate.dal.UserRepository;
 import ru.yandex.practicum.filmorate.dal.mappers.UserMapper;
 import ru.yandex.practicum.filmorate.dto.user.NewUserRequest;
@@ -12,17 +13,21 @@ import ru.yandex.practicum.filmorate.exeptions.NotFoundException;
 import ru.yandex.practicum.filmorate.model.User;
 
 import java.time.LocalDate;
-import java.util.*;
+import java.util.List;
 import java.util.stream.Collectors;
 
 
 @Service
 public class UserService {
     private final UserRepository userRepository;
+    private final FilmRepository filmRepository;
+    private final ReviewService reviewService;
 
     @Autowired
-    public UserService(UserRepository userRepository) {
+    public UserService(UserRepository userRepository, FilmRepository filmRepository, ReviewService reviewService) {
         this.userRepository = userRepository;
+        this.filmRepository = filmRepository;
+        this.reviewService = reviewService;
     }
 
     public List<User> getAllUsers() {
@@ -127,5 +132,15 @@ public class UserService {
 
     public User getUserById(Long id) {
         return getUserOrThrow(id);
+    }
+
+    public void removeUser(Long userId) {
+        getUserOrThrow(userId);
+        reviewService.removeReviewsByUserId(userId);
+        reviewService.removeReviewLikesByUserId(userId);
+        reviewService.removeReviewDislikesByUserId(userId);
+        userRepository.removeFriendsByUserId(userId, userId);
+        filmRepository.removeLikesByUserId(userId);
+        userRepository.removeUser(userId);
     }
 }
