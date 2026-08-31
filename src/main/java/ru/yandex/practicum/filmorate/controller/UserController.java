@@ -4,11 +4,13 @@ import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.filmorate.dal.mappers.UserMapper;
+import ru.yandex.practicum.filmorate.dto.events.EventResponse;
 import ru.yandex.practicum.filmorate.dto.film.FilmResponse;
 import ru.yandex.practicum.filmorate.dto.user.NewUserRequest;
 import ru.yandex.practicum.filmorate.dto.user.UpdateUserRequest;
 import ru.yandex.practicum.filmorate.dto.user.UserResponse;
 import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.services.EventService;
 import ru.yandex.practicum.filmorate.services.FilmService;
 import ru.yandex.practicum.filmorate.services.UserService;
 
@@ -19,11 +21,13 @@ import java.util.Collection;
 public class UserController {
     private final UserService userService;
     private final FilmService filmService;
+    private final EventService eventService;
 
     @Autowired
-    public UserController(UserService userService, FilmService filmService) {
+    public UserController(UserService userService, FilmService filmService, EventService eventService) {
         this.userService = userService;
         this.filmService = filmService;
+        this.eventService = eventService;
     }
 
     @GetMapping("/{id}/recommendations")
@@ -74,5 +78,10 @@ public class UserController {
     @DeleteMapping("/{id}")
     public void deleteUserById(@PathVariable("id") Long userId) {
         userService.removeUser(userId);
+    }
+
+    @GetMapping("/{id}/feed")
+    public Collection<EventResponse> getFeed(@PathVariable("id") Long id) {
+        return eventService.getFeed(id);
     }
 }
