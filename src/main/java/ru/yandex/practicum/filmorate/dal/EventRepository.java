@@ -9,7 +9,7 @@ import java.sql.Timestamp;
 import java.util.List;
 
 @Repository
-public class EventRepository extends BaseRepository<Event>{
+public class EventRepository extends BaseRepository<Event> {
     private static final String DELETE_EVENTS_BY_USER_ID_QUERY = "DELETE FROM Events WHERE user_id = ?";
 
     private static final String INSERT_EVENT_QUERY = """
