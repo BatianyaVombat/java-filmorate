@@ -43,4 +43,8 @@ public class EventService {
                 .map(EventMapper::toResponse)
                 .collect(Collectors.toList());
     }
+
+    public void removeEventsByUserId(Long userId) {
+        eventRepository.removeEventsByUserId(userId);
+    }
 }

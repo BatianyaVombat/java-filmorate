@@ -10,6 +10,8 @@ import java.util.List;
 
 @Repository
 public class EventRepository extends BaseRepository<Event>{
+    private static final String DELETE_EVENTS_BY_USER_ID_QUERY = "DELETE FROM Events WHERE user_id = ?";
+
     private static final String INSERT_EVENT_QUERY = """
             INSERT INTO Events (created_at, user_id, event_type, operation, entity_id)
                 VALUES (?, ?, ?, ?, ?)
@@ -36,5 +38,9 @@ public class EventRepository extends BaseRepository<Event>{
 
     public List<Event> getFeed(Long userId) {
         return findMany(FIND_FEED_QUERY, userId);
+    }
+
+    public void removeEventsByUserId(Long userId) {
+        delete(DELETE_EVENTS_BY_USER_ID_QUERY, userId);
     }
 }
