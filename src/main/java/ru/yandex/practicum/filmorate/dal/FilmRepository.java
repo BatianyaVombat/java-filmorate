@@ -352,4 +352,38 @@ public class FilmRepository extends BaseRepository<Film> {
                 """;
         delete(sqlRemove, filmId);
     }
+
+    public List<Film> searchFilms(String query, boolean directorFlag, boolean titleFlag) {
+        //Это баааза!
+        String sqlSearch = """
+                        SELECT f.id, COUNT(fl.user_id) AS like_count
+                        FROM Films f
+                        LEFT JOIN Film_Likes fl ON f.id = fl.film_id
+                """;
+
+        if (directorFlag) {
+            sqlSearch += "LEFT JOIN Directors d ON f.director_id = d.id ";
+        }
+
+        //сбор оставшейся части запроса
+        List<Object> params = new ArrayList<>();
+        List<String> conditions = new ArrayList<>();
+
+        if (titleFlag) {
+            conditions.add("LOWER(f.name) LIKE ?");
+            params.add("%" + query.toLowerCase() + "%");
+        }
+        if (directorFlag) {
+            conditions.add("LOWER(d.name) LIKE ?");
+            params.add("%" + query.toLowerCase() + "%");
+        }
+
+        if (!conditions.isEmpty()) {
+            sqlSearch += "WHERE " + String.join(" OR ", conditions) + " ";
+        }
+
+        sqlSearch += "GROUP BY f.id";
+
+        return mapRowsToFilms(jdbc.queryForList(sqlSearch, params.toArray()));
+    }
 }
