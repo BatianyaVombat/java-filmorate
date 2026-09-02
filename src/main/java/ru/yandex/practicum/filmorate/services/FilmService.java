@@ -251,4 +251,18 @@ public class FilmService {
         filmRepository.removeFilmGenresByFilmId(filmId);
         filmRepository.removeFilm(filmId);
     }
+
+    public List<FilmResponse> getFilmsByParams(String query, String by) {
+        List<Film> films;
+        String lowerQuery = query.toLowerCase();
+        List<String> listBy = List.of(by.toLowerCase().trim().split(","));
+        boolean searchByDirector = listBy.contains("director");
+        boolean searchByTitle = listBy.contains("title");
+
+        films = filmRepository.searchFilms(lowerQuery, searchByDirector, searchByTitle);
+
+        return films.stream()
+                .map(this::toFilmResponse)
+                .collect(Collectors.toList());
+    }
 }
