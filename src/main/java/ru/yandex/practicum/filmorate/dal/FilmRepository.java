@@ -156,6 +156,52 @@ public class FilmRepository extends BaseRepository<Film> {
         return mapRowsToFilms(rows);
     }
 
+    public List<Film> getPopularFilmByGenreAndYear(Long count, Long genreId, Long year) {
+        String sql = """
+                    SELECT f.id, COUNT(fl.user_id) AS like_count
+                    FROM Films f
+                    LEFT JOIN Film_Likes fl ON f.id = fl.film_id
+                    JOIN Film_Genres fg ON f.id = fg.film_id AND fg.genre_id = ?
+                    WHERE YEAR(f.releaseDate) = ?
+                    GROUP BY f.id
+                    ORDER BY like_count DESC
+                    LIMIT ?
+                """;
+        List<Map<String, Object>> rows = jdbc.queryForList(sql, genreId, year, count);
+
+        return mapRowsToFilms(rows);
+    }
+
+    public List<Film> getPopularFilmByGenre(Long count, Long genreId) {
+        String sql = """
+                    SELECT f.id, COUNT(fl.user_id) AS like_count
+                    FROM Films f
+                    LEFT JOIN Film_Likes fl ON f.id = fl.film_id
+                    JOIN Film_Genres fg ON f.id = fg.film_id AND fg.genre_id = ?
+                    GROUP BY f.id
+                    ORDER BY like_count DESC
+                    LIMIT ?
+                """;
+        List<Map<String, Object>> rows = jdbc.queryForList(sql, genreId, count);
+
+        return mapRowsToFilms(rows);
+    }
+
+    public List<Film> getPopularFilmByYear(Long count, Long year) {
+        String sql = """
+                    SELECT f.id, COUNT(fl.user_id) AS like_count
+                    FROM Films f
+                    LEFT JOIN Film_Likes fl ON f.id = fl.film_id
+                    WHERE YEAR(f.releaseDate) = ?
+                    GROUP BY f.id
+                    ORDER BY like_count DESC
+                    LIMIT ?
+                """;
+        List<Map<String, Object>> rows = jdbc.queryForList(sql, year, count);
+
+        return mapRowsToFilms(rows);
+    }
+
     //Вынес общий метод, который считает лайки по всем фильмам
     //Один метод подходит к 2-ум методам (getCommonFilms и getPopularFilms)
     private List<Film> mapRowsToFilms(List<Map<String, Object>> rows) {
