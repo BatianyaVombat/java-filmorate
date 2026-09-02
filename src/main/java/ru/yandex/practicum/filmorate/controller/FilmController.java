@@ -6,7 +6,6 @@ import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.filmorate.dto.film.FilmResponse;
 import ru.yandex.practicum.filmorate.dto.film.NewFilmRequest;
 import ru.yandex.practicum.filmorate.dto.film.UpdateFilmRequest;
-import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.services.FilmService;
 
 import java.util.Collection;
@@ -53,8 +52,10 @@ public class FilmController {
     }
 
     @GetMapping("/popular")
-    public List<Film> getPopularFilmList(@RequestParam(defaultValue = "10") Long count) {
-        return filmService.getPopularFilmList(count);
+    public List<FilmResponse> getPopularFilmList(@RequestParam(defaultValue = "10") Long count,
+                                                 @RequestParam(required = false) Long genreId,
+                                                 @RequestParam(required = false) Long year) {
+        return filmService.getPopularFilmsByParams(count, genreId, year);
     }
 
     @GetMapping("/common")

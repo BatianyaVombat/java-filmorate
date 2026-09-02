@@ -101,8 +101,8 @@ public class FilmService {
 
         Set<Long> finalGenreIds = request.getGenres() != null
                 ? request.getGenres().stream()
-                  .map(GenreIdRequest::getId)
-                  .collect(Collectors.toSet()) : oldFilm.getGenresIds();
+                .map(GenreIdRequest::getId)
+                .collect(Collectors.toSet()) : oldFilm.getGenresIds();
 
         Film updatedFilm = Film.builder()
                 .id(oldFilm.getId())
@@ -145,15 +145,30 @@ public class FilmService {
         eventService.addEvent(userId, EventType.LIKE, EventOperation.REMOVE, filmId);
     }
 
-    public List<Film> getPopularFilmList(Long count) {
-        return filmRepository.getPopularFilms(count);
-    }
-
     public List<FilmResponse> getSortedFilms(String sortBy, Long directorId) {
         directorRepository.findById(directorId)
                 .orElseThrow(() -> new NotFoundException("Режиссёр с id = " + directorId + " не найден"));
 
         List<Film> films = filmRepository.getFilmsByDirectorSorted(sortBy, directorId);
+
+        return films.stream()
+                .map(this::toFilmResponse)
+                .collect(Collectors.toList());
+    }
+
+    //getPopularFilmList пошёл под нож, срастил всё в один метод, который выбирает по каким параметрам отдаём фильмы
+    public List<FilmResponse> getPopularFilmsByParams(Long count, Long genreId, Long year) {
+        List<Film> films;
+
+        if (genreId != null && year != null) {
+            films = filmRepository.getPopularFilmByGenreAndYear(count, genreId, year);
+        } else if (genreId != null) {
+            films = filmRepository.getPopularFilmByGenre(count, genreId);
+        } else if (year != null) {
+            films = filmRepository.getPopularFilmByYear(count, year);
+        } else {
+            films = filmRepository.getPopularFilms(count);
+        }
 
         return films.stream()
                 .map(this::toFilmResponse)
