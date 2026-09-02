@@ -18,6 +18,8 @@ import ru.yandex.practicum.filmorate.dto.film.UpdateFilmRequest;
 import ru.yandex.practicum.filmorate.dto.genres.GenreIdRequest;
 import ru.yandex.practicum.filmorate.dto.genres.GenreResponse;
 import ru.yandex.practicum.filmorate.dto.mpa.MpaResponse;
+import ru.yandex.practicum.filmorate.enums.EventOperation;
+import ru.yandex.practicum.filmorate.enums.EventType;
 import ru.yandex.practicum.filmorate.exeptions.NotFoundException;
 import ru.yandex.practicum.filmorate.model.Director;
 import ru.yandex.practicum.filmorate.model.Film;
@@ -34,17 +36,19 @@ public class FilmService {
     private final DirectorRepository directorRepository;
     private final UserService userService;
     private final ReviewService reviewService;
+    private final EventService eventService;
 
     @Autowired
     public FilmService(FilmRepository filmRepository, MpaRepository mpaRepository,
                        GenreRepository genreRepository, DirectorRepository directorRepository,
-                       UserService userService, ReviewService reviewService) {
+                       UserService userService, ReviewService reviewService, EventService eventService) {
         this.filmRepository = filmRepository;
         this.mpaRepository = mpaRepository;
         this.genreRepository = genreRepository;
         this.directorRepository = directorRepository;
         this.userService = userService;
         this.reviewService = reviewService;
+        this.eventService = eventService;
     }
 
     public List<FilmResponse> getAllFilms() {
@@ -128,6 +132,8 @@ public class FilmService {
         } catch (DuplicateKeyException e) {
             throw new ValidationException("Пользователь уже ставил лайк этому фильму");
         }
+
+        eventService.addEvent(userId, EventType.LIKE, EventOperation.ADD, filmId);
     }
 
     public void removeLike(Long filmId, Long userId) {
@@ -135,6 +141,8 @@ public class FilmService {
         userService.getUserById(userId);
 
         filmRepository.removeLike(filmId, userId);
+
+        eventService.addEvent(userId, EventType.LIKE, EventOperation.REMOVE, filmId);
     }
 
     public List<Film> getPopularFilmList(Long count) {

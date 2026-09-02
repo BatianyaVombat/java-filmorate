@@ -8,6 +8,8 @@ import ru.yandex.practicum.filmorate.dal.UserRepository;
 import ru.yandex.practicum.filmorate.dal.mappers.UserMapper;
 import ru.yandex.practicum.filmorate.dto.user.NewUserRequest;
 import ru.yandex.practicum.filmorate.dto.user.UpdateUserRequest;
+import ru.yandex.practicum.filmorate.enums.EventOperation;
+import ru.yandex.practicum.filmorate.enums.EventType;
 import ru.yandex.practicum.filmorate.enums.FriendshipStatus;
 import ru.yandex.practicum.filmorate.exeptions.NotFoundException;
 import ru.yandex.practicum.filmorate.model.User;
@@ -22,12 +24,15 @@ public class UserService {
     private final UserRepository userRepository;
     private final FilmRepository filmRepository;
     private final ReviewService reviewService;
+    private final EventService eventService;
 
     @Autowired
-    public UserService(UserRepository userRepository, FilmRepository filmRepository, ReviewService reviewService) {
+    public UserService(UserRepository userRepository, FilmRepository filmRepository,
+                       ReviewService reviewService, EventService eventService) {
         this.userRepository = userRepository;
         this.filmRepository = filmRepository;
         this.reviewService = reviewService;
+        this.eventService = eventService;
     }
 
     public List<User> getAllUsers() {
@@ -97,6 +102,7 @@ public class UserService {
         getUserOrThrow(friendId);
 
         userRepository.addFriend(userId, friendId, FriendshipStatus.CONFIRMED);
+        eventService.addEvent(userId, EventType.FRIEND, EventOperation.ADD, friendId);
     }
 
     public void removeFriend(Long userId, Long friendId) {
@@ -104,6 +110,7 @@ public class UserService {
         getUserOrThrow(friendId);
 
         userRepository.removeFriend(userId, friendId);
+        eventService.addEvent(userId, EventType.FRIEND, EventOperation.REMOVE, friendId);
     }
 
     public List<User> getAllFriends(Long userId) {
@@ -141,6 +148,7 @@ public class UserService {
         reviewService.removeReviewDislikesByUserId(userId);
         userRepository.removeFriendsByUserId(userId, userId);
         filmRepository.removeLikesByUserId(userId);
+        eventService.removeEventsByUserId(userId);
         userRepository.removeUser(userId);
     }
 }
