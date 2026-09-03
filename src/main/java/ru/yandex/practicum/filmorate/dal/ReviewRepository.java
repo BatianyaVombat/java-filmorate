@@ -14,7 +14,7 @@ public class ReviewRepository extends BaseRepository<Review> {
             "film_id, useful) VALUES (?, ?, ?, ?, ?)";
     private static final String FIND_REVIEW_BY_ID_QUERY = "SELECT * FROM Reviews WHERE id = ?";
     private static final String UPDATE_REVIEW_QUERY = "UPDATE Reviews SET content = ?, isPositive = ?, " +
-            "user_id = ?, film_id = ?, useful = ? WHERE id = ?";
+            "useful = ? WHERE id = ?";
     private static final String DELETE_REVIEW_BY_ID_QUERY = "DELETE FROM Reviews WHERE id = ?";
     private static final String FIND_REVIEWS_LIMIT_QUERY = "SELECT * FROM Reviews ORDER BY useful DESC LIMIT ?";
     private static final String FIND_REVIEWS_BY_FILMID_LIMIT_QUERY = "SELECT * FROM Reviews " +
