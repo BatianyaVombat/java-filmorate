@@ -62,15 +62,15 @@ public class FilmService {
             throw new ValidationException("MPA не должен быть пустым");
         }
 
-        Long mpaId = request.getMpa().getId();
+        Long mpaId = request.getMpa().id();
 
         mpaRepository.findById(mpaId)
                 .orElseThrow(() -> new NotFoundException("Рейтинг с id = " + mpaId + " не найден"));
 
         if (request.getGenres() != null && !request.getGenres().isEmpty()) {
-            request.getGenres().forEach(genreIdRequest -> genreRepository.findById(genreIdRequest.getId())
+            request.getGenres().forEach(genreIdRequest -> genreRepository.findById(genreIdRequest.id())
                     .orElseThrow(() ->
-                            new NotFoundException("Жанр с id = " + genreIdRequest.getId() + " не найден")));
+                            new NotFoundException("Жанр с id = " + genreIdRequest.id() + " не найден")));
         }
 
         Film saved = filmRepository.saveFilm(FilmMapper.toEntity(request));
@@ -94,19 +94,16 @@ public class FilmService {
         Long finalDuration = request.getDuration() != null
                 ? request.getDuration() : oldFilm.getDuration();
         Long finalMpaId = request.getMpa() != null
-                ? request.getMpa().getId() : oldFilm.getMpaId();
-        Long finalDirector;
+                ? request.getMpa().id() : oldFilm.getMpaId();
+        Long finalDirector = null;
 
-        //режиссёр может становиться null если в запросе пусто или null
-        if (request.getDirectors() == null || request.getDirectors().isEmpty()) {
-            finalDirector = null;
-        } else {
-            finalDirector = request.getDirectors().getLast().getId();
+        if (!request.getDirectors().isEmpty()) {
+            finalDirector = request.getDirectors().getLast().id();
         }
 
         Set<Long> finalGenreIds = request.getGenres() != null
                 ? request.getGenres().stream()
-                .map(GenreIdRequest::getId)
+                .map(GenreIdRequest::id)
                 .collect(Collectors.toSet()) : oldFilm.getGenresIds();
 
         Film updatedFilm = Film.builder()

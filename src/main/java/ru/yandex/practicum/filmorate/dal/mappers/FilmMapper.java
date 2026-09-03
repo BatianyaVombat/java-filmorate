@@ -20,12 +20,12 @@ public class FilmMapper {
     public Film toEntity(NewFilmRequest request) {
         Set<Long> genreIds = request.getGenres() != null
                 ? request.getGenres().stream()
-                .map(GenreIdRequest::getId)
+                .map(GenreIdRequest::id)
                 .collect(Collectors.toSet())
                 : new HashSet<>();
 
         Long directorId = (request.getDirectors() != null && !request.getDirectors().isEmpty())
-                ? request.getDirectors().getFirst().getId()
+                ? request.getDirectors().getFirst().id()
                 : null;
 
         return Film.builder()
@@ -33,7 +33,7 @@ public class FilmMapper {
                 .description(request.getDescription())
                 .releaseDate(request.getReleaseDate())
                 .duration(request.getDuration())
-                .mpaId(request.getMpa().getId())
+                .mpaId(request.getMpa().id())
                 .genresIds(genreIds)
                 .directorId(directorId)
                 .build();

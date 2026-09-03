@@ -203,28 +203,6 @@ public class FilmRepository extends BaseRepository<Film> {
         return mapRowsToFilms(rows);
     }
 
-    //Вынес общий метод, который считает лайки по всем фильмам
-    //Один метод подходит к 2-ум методам (getCommonFilms и getPopularFilms)
-    private List<Film> mapRowsToFilms(List<Map<String, Object>> rows) {
-        List<Film> finalList = new ArrayList<>();
-
-        rows.forEach(row -> {
-            Number idNumber = (Number) row.get("id");
-            Long filmId = idNumber.longValue();
-
-            Number likeNumber = (Number) row.get("like_count");
-            Long likeCount = likeNumber.longValue();
-
-            Film fullFilm = findById(filmId).orElseThrow(
-                    () -> new InternalException("Фильм не найден"));
-
-            Film filmWithLike = rebuildWithLikeCount(fullFilm, likeCount);
-            finalList.add(filmWithLike);
-        });
-
-        return finalList;
-    }
-
     public List<Film> getFilmsByDirectorSorted(String sortBy, Long directorId) {
         List<Film> rawList;
 
@@ -287,27 +265,6 @@ public class FilmRepository extends BaseRepository<Film> {
         jdbc.update(sqlDeleteDirector, directorId);
     }
 
-    //вспомогательный метод для апдейта жанров
-    private void updateGenres(Long filmId, Set<Long> genres) {
-        if (genres == null) {
-            genres = new HashSet<>();
-        }
-
-        String sqlDel = """
-                    DELETE FROM Film_Genres
-                    WHERE film_id = ?
-                """;
-        execute(sqlDel, filmId);
-
-        genres.forEach(genreId -> {
-            String sqlInsert = """
-                            INSERT INTO Film_Genres (film_id, genre_id)
-                            VALUES (?, ?)
-                    """;
-            execute(sqlInsert, filmId, genreId);
-        });
-    }
-
     //метод, который возвращает все лайки
     public Map<Long, Set<Long>> getAllUserLikes() {
         String sql = "SELECT user_id, film_id FROM Film_Likes";
@@ -321,21 +278,6 @@ public class FilmRepository extends BaseRepository<Film> {
         });
 
         return likesByUser;
-    }
-
-    //вспомогательный метод для пересборки фильма с жанрами
-    private Film rebuildWithLikeCount(Film film, Long likeCount) {
-        return Film.builder()
-                .id(film.getId())
-                .name(film.getName())
-                .description(film.getDescription())
-                .releaseDate(film.getReleaseDate())
-                .duration(film.getDuration())
-                .mpaId(film.getMpaId())
-                .genresIds(film.getGenresIds())
-                .directorId(film.getDirectorId())
-                .likeCount(likeCount)
-                .build();
     }
 
     public void removeLikesByUserId(Long userId) {
@@ -401,5 +343,63 @@ public class FilmRepository extends BaseRepository<Film> {
         sqlSearch += "GROUP BY f.id ORDER BY like_count DESC, f.id ASC";
 
         return mapRowsToFilms(jdbc.queryForList(sqlSearch, params.toArray()));
+    }
+
+    //вспомогательный метод для апдейта жанров
+    private void updateGenres(Long filmId, Set<Long> genres) {
+        if (genres == null) {
+            genres = new HashSet<>();
+        }
+
+        String sqlDel = """
+                    DELETE FROM Film_Genres
+                    WHERE film_id = ?
+                """;
+        execute(sqlDel, filmId);
+
+        genres.forEach(genreId -> {
+            String sqlInsert = """
+                            INSERT INTO Film_Genres (film_id, genre_id)
+                            VALUES (?, ?)
+                    """;
+            execute(sqlInsert, filmId, genreId);
+        });
+    }
+
+    //вспомогательный метод для пересборки фильма с жанрами
+    private Film rebuildWithLikeCount(Film film, Long likeCount) {
+        return Film.builder()
+                .id(film.getId())
+                .name(film.getName())
+                .description(film.getDescription())
+                .releaseDate(film.getReleaseDate())
+                .duration(film.getDuration())
+                .mpaId(film.getMpaId())
+                .genresIds(film.getGenresIds())
+                .directorId(film.getDirectorId())
+                .likeCount(likeCount)
+                .build();
+    }
+
+    //Вынес общий метод, который считает лайки по всем фильмам
+    //Один метод подходит к 2-ум методам (getCommonFilms и getPopularFilms)
+    private List<Film> mapRowsToFilms(List<Map<String, Object>> rows) {
+        List<Film> finalList = new ArrayList<>();
+
+        rows.forEach(row -> {
+            Number idNumber = (Number) row.get("id");
+            Long filmId = idNumber.longValue();
+
+            Number likeNumber = (Number) row.get("like_count");
+            Long likeCount = likeNumber.longValue();
+
+            Film fullFilm = findById(filmId).orElseThrow(
+                    () -> new InternalException("Фильм не найден"));
+
+            Film filmWithLike = rebuildWithLikeCount(fullFilm, likeCount);
+            finalList.add(filmWithLike);
+        });
+
+        return finalList;
     }
 }

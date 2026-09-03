@@ -29,7 +29,7 @@ public class DirectorService {
 
     public List<DirectorResponse> getAllDirectors() {
         return directorRepository.findAll().stream()
-                .map(this::toDirectorResponse)
+                .map(DirectorMapper::toResponse)
                 .collect(Collectors.toList());
     }
 
@@ -40,7 +40,7 @@ public class DirectorService {
 
         Director newDirector = directorRepository.createDirector(DirectorMapper.toEntity(request));
 
-        return toDirectorResponse(newDirector);
+        return DirectorMapper.toResponse(newDirector);
     }
 
     public DirectorResponse updateDirector(Long id, UpdateDirectorRequest request) {
@@ -65,18 +65,13 @@ public class DirectorService {
         Director savedDirector = directorRepository.findById(updateDirector.getId())
                 .orElseThrow(() -> new InternalException("Не удалось найти режиссёра после обновления"));
 
-        return toDirectorResponse(savedDirector);
+        return DirectorMapper.toResponse(savedDirector);
     }
 
     public void deleteDirector(Long id) {
         getDirectorOrThrow(id);
         filmRepository.updateDirectorToNull(id);
         directorRepository.deleteDirector(id);
-    }
-
-    private DirectorResponse toDirectorResponse(Director director) {
-
-        return DirectorMapper.toResponse(director);
     }
 
     private Director getDirectorOrThrow(Long id) {
@@ -86,6 +81,6 @@ public class DirectorService {
 
     public DirectorResponse getDirectorById(Long id) {
         Director director = getDirectorOrThrow(id);
-        return toDirectorResponse(director);
+        return DirectorMapper.toResponse(director);
     }
 }
