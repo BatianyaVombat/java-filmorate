@@ -95,9 +95,14 @@ public class FilmService {
                 ? request.getDuration() : oldFilm.getDuration();
         Long finalMpaId = request.getMpa() != null
                 ? request.getMpa().getId() : oldFilm.getMpaId();
-        Long finalDirector = request.getDirectors() != null
-                ? request.getDirectors().getFirst().getId()
-                : oldFilm.getDirectorId();
+        Long finalDirector;
+
+        //режиссёр может становиться null если в запросе пусто или null
+        if (request.getDirectors() == null || request.getDirectors().isEmpty()) {
+            finalDirector = null;
+        } else {
+            finalDirector = request.getDirectors().getLast().getId();
+        }
 
         Set<Long> finalGenreIds = request.getGenres() != null
                 ? request.getGenres().stream()
@@ -129,8 +134,8 @@ public class FilmService {
 
         try {
             filmRepository.addLike(filmId, userId);
-        } catch (DuplicateKeyException e) {
-            throw new ValidationException("Пользователь уже ставил лайк этому фильму");
+        } catch (DuplicateKeyException ignored) {
+            //дубликат лайка игнорируется
         }
 
         eventService.addEvent(userId, EventType.LIKE, EventOperation.ADD, filmId);

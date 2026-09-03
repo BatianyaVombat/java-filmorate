@@ -52,8 +52,6 @@ public class ReviewRepository extends BaseRepository<Review> {
         update(UPDATE_REVIEW_QUERY,
                 review.getContent(),
                 review.getIsPositive(),
-                review.getUserId(),
-                review.getFilmId(),
                 review.getUseful(),
                 review.getId()
         );

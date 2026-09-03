@@ -5,6 +5,7 @@ import org.apache.logging.log4j.util.InternalException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.dal.DirectorRepository;
+import ru.yandex.practicum.filmorate.dal.FilmRepository;
 import ru.yandex.practicum.filmorate.dal.mappers.DirectorMapper;
 import ru.yandex.practicum.filmorate.dto.directors.DirectorResponse;
 import ru.yandex.practicum.filmorate.dto.directors.NewDirectorRequest;
@@ -18,10 +19,12 @@ import java.util.stream.Collectors;
 @Service
 public class DirectorService {
     private final DirectorRepository directorRepository;
+    private final FilmRepository filmRepository;
 
     @Autowired
-    public DirectorService(DirectorRepository directorRepository) {
+    public DirectorService(DirectorRepository directorRepository, FilmRepository filmRepository) {
         this.directorRepository = directorRepository;
+        this.filmRepository = filmRepository;
     }
 
     public List<DirectorResponse> getAllDirectors() {
@@ -67,12 +70,11 @@ public class DirectorService {
 
     public void deleteDirector(Long id) {
         getDirectorOrThrow(id);
-
+        filmRepository.updateDirectorToNull(id);
         directorRepository.deleteDirector(id);
     }
 
     private DirectorResponse toDirectorResponse(Director director) {
-
 
         return DirectorMapper.toResponse(director);
     }

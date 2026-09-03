@@ -4,6 +4,7 @@ import org.apache.logging.log4j.util.InternalException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Repository;
+import ru.yandex.practicum.filmorate.exeptions.NotFoundException;
 import ru.yandex.practicum.filmorate.model.Film;
 
 import java.util.*;
@@ -236,7 +237,14 @@ public class FilmRepository extends BaseRepository<Film> {
                     """;
 
             rawList = findMany(sqlYearSort, directorId);
-            return rawList;
+
+            List<Film> completeFilms = new ArrayList<>();
+            for (Film film : rawList) {
+                Film full = findById(film.getId()).orElseThrow(() -> new NotFoundException("Фильм не найден"));
+                completeFilms.add(full);
+            }
+
+            return completeFilms;
         } else if (sortBy.equals("likes")) {
             String sqlLikeCount = """
                             SELECT f.id, COUNT(fl.user_id) AS like_count
@@ -268,6 +276,15 @@ public class FilmRepository extends BaseRepository<Film> {
         } else {
             return new ArrayList<>();
         }
+    }
+
+    //зануление поля режиссёра в фильме, если он удалён
+    public void updateDirectorToNull(Long directorId) {
+        String sqlDeleteDirector = """
+                    UPDATE Films SET director_id = NULL
+                    WHERE director_id = ?
+                """;
+        jdbc.update(sqlDeleteDirector, directorId);
     }
 
     //вспомогательный метод для апдейта жанров
@@ -354,7 +371,6 @@ public class FilmRepository extends BaseRepository<Film> {
     }
 
     public List<Film> searchFilms(String query, boolean directorFlag, boolean titleFlag) {
-        //Это баааза!
         String sqlSearch = """
                         SELECT f.id, COUNT(fl.user_id) AS like_count
                         FROM Films f
@@ -382,7 +398,7 @@ public class FilmRepository extends BaseRepository<Film> {
             sqlSearch += "WHERE " + String.join(" OR ", conditions) + " ";
         }
 
-        sqlSearch += "GROUP BY f.id";
+        sqlSearch += "GROUP BY f.id ORDER BY like_count DESC, f.id ASC";
 
         return mapRowsToFilms(jdbc.queryForList(sqlSearch, params.toArray()));
     }
