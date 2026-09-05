@@ -6,7 +6,6 @@ import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.filmorate.dto.film.FilmResponse;
 import ru.yandex.practicum.filmorate.dto.film.NewFilmRequest;
 import ru.yandex.practicum.filmorate.dto.film.UpdateFilmRequest;
-import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.services.FilmService;
 
 import java.util.Collection;
@@ -53,7 +52,30 @@ public class FilmController {
     }
 
     @GetMapping("/popular")
-    public Collection<Film> getPopularFilmList(@RequestParam(defaultValue = "10") Long count) {
-        return filmService.getPopularFilmList(count);
+    public List<FilmResponse> getPopularFilmList(@RequestParam(defaultValue = "10") Long count,
+                                                 @RequestParam(required = false) Long genreId,
+                                                 @RequestParam(required = false) Long year) {
+        return filmService.getPopularFilmsByParams(count, genreId, year);
+    }
+
+    @GetMapping("/common")
+    public Collection<FilmResponse> getCommonFilms(@RequestParam Long userId, @RequestParam Long friendId) {
+        return filmService.getCommonFilms(userId, friendId);
+    }
+
+    @GetMapping("/director/{directorId}")
+    public List<FilmResponse> sortedFilmList(@RequestParam(defaultValue = "year") String sortBy,
+                                             @PathVariable Long directorId) {
+        return filmService.getSortedFilms(sortBy, directorId);
+    }
+
+    @GetMapping("/search")
+    public List<FilmResponse> findFilmsByTitleOrDirector(@RequestParam String query, @RequestParam String by) {
+        return filmService.getFilmsByParams(query, by);
+    }
+
+    @DeleteMapping("/{id}")
+    public void deleteFilmById(@PathVariable("id") Long filmId) {
+        filmService.removeFilm(filmId);
     }
 }

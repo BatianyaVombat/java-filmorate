@@ -1,6 +1,7 @@
 package ru.yandex.practicum.filmorate.dal.mappers;
 
 import lombok.experimental.UtilityClass;
+import ru.yandex.practicum.filmorate.dto.directors.DirectorResponse;
 import ru.yandex.practicum.filmorate.dto.film.FilmResponse;
 import ru.yandex.practicum.filmorate.dto.film.NewFilmRequest;
 import ru.yandex.practicum.filmorate.dto.genres.GenreIdRequest;
@@ -19,21 +20,26 @@ public class FilmMapper {
     public Film toEntity(NewFilmRequest request) {
         Set<Long> genreIds = request.getGenres() != null
                 ? request.getGenres().stream()
-                .map(GenreIdRequest::getId)
+                .map(GenreIdRequest::id)
                 .collect(Collectors.toSet())
                 : new HashSet<>();
+
+        Long directorId = (request.getDirectors() != null && !request.getDirectors().isEmpty())
+                ? request.getDirectors().getFirst().id()
+                : null;
 
         return Film.builder()
                 .name(request.getName())
                 .description(request.getDescription())
                 .releaseDate(request.getReleaseDate())
                 .duration(request.getDuration())
-                .mpaId(request.getMpa().getId())
+                .mpaId(request.getMpa().id())
                 .genresIds(genreIds)
+                .directorId(directorId)
                 .build();
     }
 
-    public FilmResponse toResponse(Film film, MpaResponse mpa, List<GenreResponse> genres) {
+    public FilmResponse toResponse(Film film, MpaResponse mpa, List<GenreResponse> genres, List<DirectorResponse> directors) {
         return FilmResponse.builder()
                 .id(film.getId())
                 .name(film.getName())
@@ -43,6 +49,7 @@ public class FilmMapper {
                 .likeCount(film.getLikeCount())
                 .mpa(mpa)
                 .genres(genres)
+                .directors(directors)
                 .build();
     }
 }

@@ -102,4 +102,22 @@ public class UserRepository extends BaseRepository<User> {
 
         return delete(sqlRemove, userId, friendId);
     }
+
+    public void removeFriendsByUserId(Long userId, Long friendId) {
+        String sqlRemove = """
+                        DELETE FROM Friends
+                        WHERE user_id = ? OR friend_id = ?
+                """;
+
+        delete(sqlRemove, userId, friendId);
+    }
+
+    public void removeUser(Long userId) {
+        String sqlRemove = """
+                        DELETE FROM Users
+                        WHERE id = ?
+                """;
+
+        delete(sqlRemove, userId);
+    }
 }

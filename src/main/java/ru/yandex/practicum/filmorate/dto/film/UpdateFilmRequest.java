@@ -4,10 +4,12 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import ru.yandex.practicum.filmorate.dto.directors.DirectorIdRequest;
 import ru.yandex.practicum.filmorate.dto.genres.GenreIdRequest;
 import ru.yandex.practicum.filmorate.dto.mpa.MpaIdRequest;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 
 @Getter
@@ -22,4 +24,5 @@ public class UpdateFilmRequest {
     private Long duration;
     private List<GenreIdRequest> genres;
     private MpaIdRequest mpa;
+    private List<DirectorIdRequest> directors = new ArrayList<>();
 }

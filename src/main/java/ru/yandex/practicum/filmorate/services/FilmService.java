@@ -5,22 +5,27 @@ import org.apache.logging.log4j.util.InternalException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
+import ru.yandex.practicum.filmorate.dal.DirectorRepository;
 import ru.yandex.practicum.filmorate.dal.FilmRepository;
 import ru.yandex.practicum.filmorate.dal.GenreRepository;
 import ru.yandex.practicum.filmorate.dal.MpaRepository;
+import ru.yandex.practicum.filmorate.dal.mappers.DirectorMapper;
 import ru.yandex.practicum.filmorate.dal.mappers.FilmMapper;
+import ru.yandex.practicum.filmorate.dto.directors.DirectorResponse;
 import ru.yandex.practicum.filmorate.dto.film.FilmResponse;
 import ru.yandex.practicum.filmorate.dto.film.NewFilmRequest;
 import ru.yandex.practicum.filmorate.dto.film.UpdateFilmRequest;
 import ru.yandex.practicum.filmorate.dto.genres.GenreIdRequest;
 import ru.yandex.practicum.filmorate.dto.genres.GenreResponse;
 import ru.yandex.practicum.filmorate.dto.mpa.MpaResponse;
+import ru.yandex.practicum.filmorate.enums.EventOperation;
+import ru.yandex.practicum.filmorate.enums.EventType;
 import ru.yandex.practicum.filmorate.exeptions.NotFoundException;
+import ru.yandex.practicum.filmorate.model.Director;
 import ru.yandex.practicum.filmorate.model.Film;
 
 import java.time.LocalDate;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -28,15 +33,22 @@ public class FilmService {
     private final FilmRepository filmRepository;
     private final MpaRepository mpaRepository;
     private final GenreRepository genreRepository;
+    private final DirectorRepository directorRepository;
     private final UserService userService;
+    private final ReviewService reviewService;
+    private final EventService eventService;
 
     @Autowired
     public FilmService(FilmRepository filmRepository, MpaRepository mpaRepository,
-                       GenreRepository genreRepository, UserService userService) {
+                       GenreRepository genreRepository, DirectorRepository directorRepository,
+                       UserService userService, ReviewService reviewService, EventService eventService) {
         this.filmRepository = filmRepository;
         this.mpaRepository = mpaRepository;
         this.genreRepository = genreRepository;
+        this.directorRepository = directorRepository;
         this.userService = userService;
+        this.reviewService = reviewService;
+        this.eventService = eventService;
     }
 
     public List<FilmResponse> getAllFilms() {
@@ -50,15 +62,15 @@ public class FilmService {
             throw new ValidationException("MPA не должен быть пустым");
         }
 
-        Long mpaId = request.getMpa().getId();
+        Long mpaId = request.getMpa().id();
 
         mpaRepository.findById(mpaId)
                 .orElseThrow(() -> new NotFoundException("Рейтинг с id = " + mpaId + " не найден"));
 
         if (request.getGenres() != null && !request.getGenres().isEmpty()) {
-            request.getGenres().forEach(genreIdRequest -> genreRepository.findById(genreIdRequest.getId())
+            request.getGenres().forEach(genreIdRequest -> genreRepository.findById(genreIdRequest.id())
                     .orElseThrow(() ->
-                            new NotFoundException("Жанр с id = " + genreIdRequest.getId() + " не найден")));
+                            new NotFoundException("Жанр с id = " + genreIdRequest.id() + " не найден")));
         }
 
         Film saved = filmRepository.saveFilm(FilmMapper.toEntity(request));
@@ -82,11 +94,16 @@ public class FilmService {
         Long finalDuration = request.getDuration() != null
                 ? request.getDuration() : oldFilm.getDuration();
         Long finalMpaId = request.getMpa() != null
-                ? request.getMpa().getId() : oldFilm.getMpaId();
+                ? request.getMpa().id() : oldFilm.getMpaId();
+        Long finalDirector = null;
+
+        if (!request.getDirectors().isEmpty()) {
+            finalDirector = request.getDirectors().getLast().id();
+        }
 
         Set<Long> finalGenreIds = request.getGenres() != null
                 ? request.getGenres().stream()
-                .map(GenreIdRequest::getId)
+                .map(GenreIdRequest::id)
                 .collect(Collectors.toSet()) : oldFilm.getGenresIds();
 
         Film updatedFilm = Film.builder()
@@ -97,6 +114,7 @@ public class FilmService {
                 .duration(finalDuration)
                 .mpaId(finalMpaId)
                 .genresIds(finalGenreIds)
+                .directorId(finalDirector)
                 .build();
 
         filmRepository.updateFilm(updatedFilm);
@@ -113,9 +131,11 @@ public class FilmService {
 
         try {
             filmRepository.addLike(filmId, userId);
-        } catch (DuplicateKeyException e) {
-            throw new ValidationException("Пользователь уже ставил лайк этому фильму");
+        } catch (DuplicateKeyException ignored) {
+            //дубликат лайка игнорируется
         }
+
+        eventService.addEvent(userId, EventType.LIKE, EventOperation.ADD, filmId);
     }
 
     public void removeLike(Long filmId, Long userId) {
@@ -123,18 +143,57 @@ public class FilmService {
         userService.getUserById(userId);
 
         filmRepository.removeLike(filmId, userId);
+
+        eventService.addEvent(userId, EventType.LIKE, EventOperation.REMOVE, filmId);
     }
 
-    public List<Film> getPopularFilmList(Long count) {
-        return filmRepository.getPopularFilms(count);
+    public List<FilmResponse> getSortedFilms(String sortBy, Long directorId) {
+        directorRepository.findById(directorId)
+                .orElseThrow(() -> new NotFoundException("Режиссёр с id = " + directorId + " не найден"));
+
+        List<Film> films = filmRepository.getFilmsByDirectorSorted(sortBy, directorId);
+
+        return films.stream()
+                .map(this::toFilmResponse)
+                .collect(Collectors.toList());
+    }
+
+    //getPopularFilmList пошёл под нож, срастил всё в один метод, который выбирает по каким параметрам отдаём фильмы
+    public List<FilmResponse> getPopularFilmsByParams(Long count, Long genreId, Long year) {
+        List<Film> films;
+
+        if (genreId != null && year != null) {
+            films = filmRepository.getPopularFilmByGenreAndYear(count, genreId, year);
+        } else if (genreId != null) {
+            films = filmRepository.getPopularFilmByGenre(count, genreId);
+        } else if (year != null) {
+            films = filmRepository.getPopularFilmByYear(count, year);
+        } else {
+            films = filmRepository.getPopularFilms(count);
+        }
+
+        return films.stream()
+                .map(this::toFilmResponse)
+                .collect(Collectors.toList());
     }
 
     private FilmResponse toFilmResponse(Film film) {
         MpaResponse mpa = mpaRepository.findById(film.getMpaId())
                 .orElseThrow(() -> new NotFoundException("Рейтинг не найден"));
+
         List<GenreResponse> genres = genreRepository.findAllById(film.getGenresIds());
 
-        return FilmMapper.toResponse(film, mpa, genres);
+        List<DirectorResponse> directors = new ArrayList<>();
+        if (film.getDirectorId() != null) {
+            Optional<Director> director = directorRepository.findById(film.getDirectorId());
+
+            if (director.isPresent()) {
+                DirectorResponse dr = DirectorMapper.toResponse(director.get());
+                directors.add(dr);
+            }
+        }
+
+        return FilmMapper.toResponse(film, mpa, genres, directors);
     }
 
     private Film getFilmOrThrow(Long filmId) {
@@ -144,12 +203,68 @@ public class FilmService {
 
     public FilmResponse getFilmById(Long id) {
         Film film = getFilmOrThrow(id);
+        return toFilmResponse(film);
+    }
 
-        MpaResponse mpa = mpaRepository.findById(film.getMpaId())
-                .orElseThrow(() -> new NotFoundException("Рейтинг с id = " + film.getMpaId() + " не найден"));
+    public List<FilmResponse> getCommonFilms(Long userId, Long friendId) {
+        userService.getUserById(userId);
+        userService.getUserById(friendId);
 
-        List<GenreResponse> genres = genreRepository.findAllById(film.getGenresIds());
+        return filmRepository.getCommonFilms(userId, friendId).stream()
+                .map(this::toFilmResponse)
+                .collect(Collectors.toList());
+    }
 
-        return FilmMapper.toResponse(film, mpa, genres);
+    public List<FilmResponse> getRecommendations(Long userId) {
+        userService.getUserById(userId);
+
+        Map<Long, Set<Long>> allLikes = filmRepository.getAllUserLikes();
+        Set<Long> targetLikes = allLikes.getOrDefault(userId, Set.of());
+
+        Long bestUserId = null;
+        int bestIntersection = 0;
+
+        for (Map.Entry<Long, Set<Long>> entry : allLikes.entrySet()) {
+            if (entry.getKey().equals(userId)) continue;
+            Set<Long> intersection = new HashSet<>(entry.getValue());
+            intersection.retainAll(targetLikes);
+            if (intersection.size() > bestIntersection) {
+                bestIntersection = intersection.size();
+                bestUserId = entry.getKey();
+            }
+        }
+
+        if (bestUserId == null) {
+            return List.of(); // ни у кого нет пересечений — рекомендаций нет, это не ошибка
+        }
+
+        Set<Long> recommendedIds = new HashSet<>(allLikes.get(bestUserId));
+        recommendedIds.removeAll(targetLikes);
+
+        return recommendedIds.stream()
+                .map(this::getFilmById)
+                .collect(Collectors.toList());
+    }
+
+    public void removeFilm(Long filmId) {
+        getFilmOrThrow(filmId);
+        reviewService.removeReviewByFilmId(filmId);
+        filmRepository.removeLikesByFilmId(filmId);
+        filmRepository.removeFilmGenresByFilmId(filmId);
+        filmRepository.removeFilm(filmId);
+    }
+
+    public List<FilmResponse> getFilmsByParams(String query, String by) {
+        List<Film> films;
+        String lowerQuery = query.toLowerCase();
+        List<String> listBy = List.of(by.toLowerCase().trim().split(","));
+        boolean searchByDirector = listBy.contains("director");
+        boolean searchByTitle = listBy.contains("title");
+
+        films = filmRepository.searchFilms(lowerQuery, searchByDirector, searchByTitle);
+
+        return films.stream()
+                .map(this::toFilmResponse)
+                .collect(Collectors.toList());
     }
 }
